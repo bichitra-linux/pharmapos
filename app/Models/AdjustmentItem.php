@@ -13,27 +13,23 @@ class AdjustmentItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'inventory_adjustment_id',
+        'adjustment_id',
         'medicine_id',
         'batch_id',
-        'quantity_before',
-        'quantity_adjusted',
-        'quantity_after',
+        'quantity',
         'reason',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity_before' => 'decimal:2',
-            'quantity_adjusted' => 'decimal:2',
-            'quantity_after' => 'decimal:2',
+            'quantity' => 'decimal:2',
         ];
     }
 
     public function adjustment(): BelongsTo
     {
-        return $this->belongsTo(InventoryAdjustment::class, 'inventory_adjustment_id');
+        return $this->belongsTo(InventoryAdjustment::class, 'adjustment_id');
     }
 
     public function medicine(): BelongsTo

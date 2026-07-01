@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\PaymentGateway;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -260,10 +261,19 @@ class PaymentGatewayService
     }
 
     /**
-     * Get gateway configuration from config file.
+     * Get gateway configuration from DB (with fallback to config file).
      */
     private function getConfig(string $gateway): array
     {
+        $dbGateway = PaymentGateway::where('code', $gateway)->where('is_active', true)->first();
+
+        if ($dbGateway && $dbGateway->config) {
+            return array_merge($dbGateway->config, [
+                'is_active' => $dbGateway->is_active,
+                'is_sandbox' => $dbGateway->is_sandbox,
+            ]);
+        }
+
         $config = config("payment.gateways.{$gateway}");
 
         if (! $config) {

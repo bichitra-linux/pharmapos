@@ -16,6 +16,15 @@ final class CompanyController extends Controller
     {
         $company = DB::table('companies')
             ->where('id', $request->user()->company_id)
+            ->select([
+                'id', 'name', 'slug', 'logo', 'address', 'phone', 'email',
+                'pan_number', 'vat_number', 'drug_license_number',
+                'pharmacy_license_number', 'pharmacist_name',
+                'pharmacist_registration_number', 'subscription_plan_id',
+                'subscription_expires_at', 'settings',
+                'country', 'state', 'local_level', 'registration_number',
+                'google_maps_link', 'created_at', 'updated_at',
+            ])
             ->first();
 
         if (! $company) {
@@ -65,7 +74,18 @@ final class CompanyController extends Controller
             ->where('id', $companyId)
             ->update($updateData);
 
-        $company = DB::table('companies')->where('id', $companyId)->first();
+        $company = DB::table('companies')
+            ->where('id', $companyId)
+            ->select([
+                'id', 'name', 'slug', 'logo', 'address', 'phone', 'email',
+                'pan_number', 'vat_number', 'drug_license_number',
+                'pharmacy_license_number', 'pharmacist_name',
+                'pharmacist_registration_number', 'subscription_plan_id',
+                'subscription_expires_at', 'settings',
+                'country', 'state', 'local_level', 'registration_number',
+                'google_maps_link', 'created_at', 'updated_at',
+            ])
+            ->first();
 
         return response()->json([
             'success' => true,

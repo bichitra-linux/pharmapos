@@ -32,11 +32,11 @@ export default function SuperAdminLoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-950 to-gray-950 px-4">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-950 to-surface px-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-                        <Shield className="h-6 w-6 text-indigo-600" />
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
+                        <Shield className="h-6 w-6 text-primary-600" />
                     </div>
                     <CardTitle className="text-2xl">Super Admin</CardTitle>
                     <CardDescription>Sign in to the platform management panel</CardDescription>

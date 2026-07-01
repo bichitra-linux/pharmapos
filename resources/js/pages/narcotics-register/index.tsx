@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
+import { extractPaginatedData, formatDate } from '@/lib/utils';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { formatDate } from '@/lib/utils';
 import type { NarcoticsRegister } from '@/types';
 
 export default function NarcoticsRegisterIndex() {
@@ -12,13 +12,13 @@ export default function NarcoticsRegisterIndex() {
         queryKey: ['narcotics', page],
         queryFn: async () => {
             const res = await api.get('/narcotics-register', { params: { page, per_page: 15 } });
-            return res.data;
+            return extractPaginatedData<NarcoticsRegister>(res.data);
         },
     });
 
     const columns: Column<NarcoticsRegister>[] = [
-        { key: 'date', header: 'Date', sortable: true, render: (item) => formatDate(item.date) },
-        { key: 'medicine', header: 'Medicine', render: (item) => item.medicine?.brand_name || '-' },
+        { key: 'created_at', header: 'Date', sortable: true, render: (item) => formatDate(item.created_at) },
+        { key: 'brand_name', header: 'Medicine', render: (item) => item.brand_name || '-' },
         { key: 'patient_name', header: 'Patient' },
         { key: 'doctor_name', header: 'Doctor' },
         { key: 'quantity', header: 'Qty' },

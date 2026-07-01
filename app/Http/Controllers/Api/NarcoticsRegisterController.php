@@ -15,7 +15,6 @@ final class NarcoticsRegisterController extends Controller
     {
         $query = DB::table('narcotics_register')
             ->join('medicines', 'medicines.id', '=', 'narcotics_register.medicine_id')
-            ->leftJoin('customers', 'customers.id', '=', 'narcotics_register.customer_id')
             ->leftJoin('sales', 'sales.id', '=', 'narcotics_register.sale_id')
             ->where('narcotics_register.company_id', $request->user()->company_id)
             ->where('narcotics_register.outlet_id', $request->user()->outlet_id)
@@ -23,8 +22,6 @@ final class NarcoticsRegisterController extends Controller
                 'narcotics_register.*',
                 'medicines.brand_name',
                 'medicines.generic_name',
-                'customers.name as customer_name',
-                'customers.phone as customer_phone',
                 'sales.invoice_number'
             );
 
@@ -54,14 +51,12 @@ final class NarcoticsRegisterController extends Controller
         $request->validate([
             'medicine_id' => 'required|exists:medicines,id',
             'sale_id' => 'nullable|exists:sales,id',
-            'customer_id' => 'nullable|exists:customers,id',
+            'batch_id' => 'required|exists:medicine_batches,id',
             'prescription_number' => 'nullable|string|max:100',
-            'doctor_name' => 'nullable|string|max:255',
+            'doctor_name' => 'required|string|max:255',
             'quantity' => 'required|numeric|min:0.01',
-            'batch_number' => 'nullable|string|max:100',
-            'patient_name' => 'nullable|string|max:255',
+            'patient_name' => 'required|string|max:255',
             'patient_address' => 'nullable|string|max:500',
-            'purpose' => 'nullable|string|max:500',
         ]);
 
         $companyId = $request->user()->company_id;
@@ -72,15 +67,14 @@ final class NarcoticsRegisterController extends Controller
             'outlet_id' => $outletId,
             'medicine_id' => $request->medicine_id,
             'sale_id' => $request->sale_id,
-            'customer_id' => $request->customer_id,
-            'user_id' => $request->user()->id,
+            'batch_id' => $request->batch_id,
+            'dispensed_by' => $request->user()->id,
             'prescription_number' => $request->prescription_number,
             'doctor_name' => $request->doctor_name,
             'quantity' => $request->quantity,
-            'batch_number' => $request->batch_number,
+            'balance' => $request->quantity,
             'patient_name' => $request->patient_name,
             'patient_address' => $request->patient_address,
-            'purpose' => $request->purpose,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

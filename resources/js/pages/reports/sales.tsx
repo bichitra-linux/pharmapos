@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageLoader } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
 import { Download } from 'lucide-react';
 
 export default function SalesReport() {
+    const { addToast } = useToast();
     const [from, setFrom] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     const [to, setTo] = useState(new Date().toISOString().split('T')[0]);
 
@@ -23,11 +25,11 @@ export default function SalesReport() {
             <h1 className="text-2xl font-bold">Sales Report</h1>
 
             <Card>
-                <CardContent className="flex items-end gap-4 p-6">
+                <CardContent className="flex flex-wrap items-end gap-4 p-6">
                     <Input label="From" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
                     <Input label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
                     <Button onClick={() => refetch()}>Generate</Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => addToast({ type: 'info', title: 'Export coming soon' })}>
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>

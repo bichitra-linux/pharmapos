@@ -30,7 +30,7 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
+        <div className="flex min-h-screen items-center justify-center bg-surface-muted px-4 py-8">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
@@ -96,7 +96,7 @@ export default function RegisterPage() {
                             Create account
                         </Button>
                     </form>
-                    <p className="mt-4 text-center text-sm text-gray-500">
+                    <p className="mt-4 text-center text-sm text-text-muted">
                         Already have an account?{' '}
                         <Link to="/login" className="text-primary-600 hover:underline">
                             Sign in

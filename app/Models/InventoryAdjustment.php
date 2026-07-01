@@ -49,6 +49,6 @@ class InventoryAdjustment extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(AdjustmentItem::class);
+        return $this->hasMany(AdjustmentItem::class, 'adjustment_id');
     }
 }

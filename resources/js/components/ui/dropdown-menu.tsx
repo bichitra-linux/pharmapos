@@ -14,12 +14,14 @@ export function DropdownMenu({ trigger, children, align = 'right' }: DropdownMen
 
     return (
         <div ref={ref} className="relative inline-block">
-            <div onClick={() => setOpen(!open)}>{trigger}</div>
+            <button type="button" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
+                {trigger}
+            </button>
             {open && (
                 <div
                     role="menu"
                     className={cn(
-                        'absolute z-50 mt-1 min-w-[180px] rounded-md border border-gray-200 bg-white py-1 shadow-lg',
+                        'absolute z-50 mt-1 min-w-[180px] rounded-md border border-border bg-surface py-1 shadow-lg',
                         align === 'right' ? 'right-0' : 'left-0'
                     )}
                     onClick={() => setOpen(false)}
@@ -47,7 +49,7 @@ export function DropdownMenuItem({
             role="menuitem"
             onClick={onClick}
             className={cn(
-                'flex w-full items-center px-3 py-2 text-sm hover:bg-gray-100',
+                'flex w-full items-center px-3 py-2 text-sm hover:bg-surface-muted',
                 destructive && 'text-danger-600 hover:bg-danger-50',
                 className
             )}
@@ -58,5 +60,5 @@ export function DropdownMenuItem({
 }
 
 export function DropdownMenuSeparator() {
-    return <div role="separator" className="my-1 h-px bg-gray-200" />;
+    return <div role="separator" className="my-1 h-px bg-border" />;
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
+import { extractPaginatedData } from '@/lib/utils';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,7 @@ export default function UsersIndex() {
         queryKey: ['users', page],
         queryFn: async () => {
             const res = await api.get('/users', { params: { page, per_page: 15 } });
-            return res.data;
+            return extractPaginatedData<User>(res.data);
         },
     });
 

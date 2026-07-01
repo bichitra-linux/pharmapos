@@ -24,12 +24,23 @@ export default function ReportsIndex() {
     return (
         <div className="space-y-6">
             <h1 className="text-2xl font-bold">Reports</h1>
+            <p className="text-text-muted">
+                Access sales analytics, inventory status, expiry alerts, profit summaries, VAT filings, and controlled substance logs.
+            </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {reportLinks.map((report) => (
                     <Card
                         key={report.to}
+                        role="button"
+                        tabIndex={0}
                         className="cursor-pointer transition-shadow hover:shadow-md"
                         onClick={() => navigate(report.to)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                navigate(report.to);
+                            }
+                        }}
                     >
                         <CardContent className="flex items-start gap-4 p-6">
                             <div className="rounded-lg bg-primary-50 p-3">
@@ -37,7 +48,7 @@ export default function ReportsIndex() {
                             </div>
                             <div>
                                 <h3 className="font-semibold">{report.label}</h3>
-                                <p className="text-sm text-gray-500">{report.description}</p>
+                                <p className="text-sm text-text-muted">{report.description}</p>
                             </div>
                         </CardContent>
                     </Card>

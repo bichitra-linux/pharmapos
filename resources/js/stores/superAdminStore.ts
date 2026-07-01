@@ -18,15 +18,12 @@ export const useSuperAdminStore = create<SuperAdminState>()(
             token: null,
             isAuthenticated: false,
             setUser: (user, token) => {
-                localStorage.setItem('super_admin_token', token);
                 set({ user, token, isAuthenticated: true });
             },
             setToken: (token) => {
-                localStorage.setItem('super_admin_token', token);
                 set({ token, isAuthenticated: true });
             },
             logout: () => {
-                localStorage.removeItem('super_admin_token');
                 set({ user: null, token: null, isAuthenticated: false });
             },
         }),

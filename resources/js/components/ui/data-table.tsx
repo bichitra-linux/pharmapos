@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
 import { Pagination } from './pagination';
 import { SearchInput } from './search-input';
-import { Spinner } from './spinner';
+import { Skeleton } from './skeleton';
 import { EmptyState } from './empty-state';
 import { Inbox } from 'lucide-react';
 
@@ -62,30 +62,30 @@ export function DataTable<T extends Record<string, any>>({
         }
     };
 
-    const sortedData = sortKey
-        ? [...data].sort((a, b) => {
-              const aVal = a[sortKey];
-              const bVal = b[sortKey];
-              if (aVal == null) return 1;
-              if (bVal == null) return -1;
-              if (typeof aVal === 'string' && typeof bVal === 'string') {
-                  return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-              }
-              return sortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
-          })
-        : data;
+    const sortedData = useMemo(() => {
+        if (!sortKey) return data;
+        return [...data].sort((a, b) => {
+            const aVal = a[sortKey];
+            const bVal = b[sortKey];
+            if (aVal == null) return 1;
+            if (bVal == null) return -1;
+            if (typeof aVal === 'string' && typeof bVal === 'string') {
+                return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            }
+            return sortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+        });
+    }, [data, sortKey, sortDir]);
 
     return (
         <div className={cn('space-y-4', className)}>
             {searchable && onSearch && (
                 <SearchInput
-                    value=""
                     onChange={onSearch}
                     placeholder={searchPlaceholder}
                     className="max-w-sm"
                 />
             )}
-            <div className="rounded-lg border border-gray-200 bg-white">
+            <div className="rounded-lg border border-border bg-surface">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -94,11 +94,12 @@ export function DataTable<T extends Record<string, any>>({
                                     key={col.key}
                                     className={cn(col.className, col.sortable && 'cursor-pointer select-none')}
                                     onClick={() => col.sortable && handleSort(col.key)}
+                                    aria-sort={col.sortable ? (sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                                 >
                                     <div className="flex items-center gap-1">
                                         {col.header}
                                         {col.sortable && (
-                                            <ArrowUpDown className="h-4 w-4 text-gray-400" />
+                                            <ArrowUpDown className="h-4 w-4 text-text-muted" />
                                         )}
                                     </div>
                                 </TableHead>
@@ -107,11 +108,15 @@ export function DataTable<T extends Record<string, any>>({
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-32 text-center">
-                                    <Spinner className="mx-auto" />
-                                </TableCell>
-                            </TableRow>
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={`sk-${i}`}>
+                                    {columns.map((col, j) => (
+                                        <TableCell key={`sk-${i}-${j}`}>
+                                            <Skeleton className="h-4 w-3/4" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
                         ) : sortedData.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={columns.length}>
@@ -121,8 +126,16 @@ export function DataTable<T extends Record<string, any>>({
                         ) : (
                             sortedData.map((item, idx) => (
                                 <TableRow
-                                    key={idx}
+                                    key={'id' in item ? item.id : idx}
+                                    role="row"
+                                    tabIndex={onRowClick ? 0 : undefined}
                                     onClick={() => onRowClick?.(item)}
+                                    onKeyDown={(e) => {
+                                        if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                                            e.preventDefault();
+                                            onRowClick(item);
+                                        }
+                                    }}
                                     className={onRowClick ? 'cursor-pointer' : ''}
                                 >
                                     {columns.map((col) => (
@@ -140,7 +153,7 @@ export function DataTable<T extends Record<string, any>>({
             </div>
             {pagination && (
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-text-muted">
                         Showing {pagination.total > 0 ? (pagination.currentPage - 1) * (pagination.perPage ?? 15) + 1 : 0} to{' '}
                         {Math.min(pagination.currentPage * (pagination.perPage ?? 15), pagination.total)} of {pagination.total}
                     </p>

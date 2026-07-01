@@ -219,7 +219,7 @@ final class ReportController extends Controller
         $salesVat = Sale::where('company_id', $companyId)
             ->where('outlet_id', $outletId)
             ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
-            ->selectRaw('SUM(subtotal) as taxable_sales, SUM(vat_amount) as output_vat')
+            ->selectRaw('SUM(total_amount - vat_amount) as taxable_sales, SUM(vat_amount) as output_vat')
             ->first();
 
         $purchaseVat = DB::table('purchases')

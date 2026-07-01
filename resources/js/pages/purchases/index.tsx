@@ -17,13 +17,14 @@ export default function PurchasesIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['purchases', search, page],
         queryFn: () => purchasesService.list({ search, page, per_page: 15 }),
+        staleTime: 30_000,
     });
 
     const columns: Column<Purchase>[] = [
         { key: 'purchase_number', header: 'Purchase #', sortable: true },
         { key: 'supplier', header: 'Supplier', render: (item) => item.supplier?.name || '-' },
-        { key: 'invoice_date', header: 'Invoice Date', sortable: true, render: (item) => formatDate(item.invoice_date) },
-        { key: 'total_amount', header: 'Total', sortable: true, render: (item) => formatCurrency(item.total_amount) },
+        { key: 'purchase_date', header: 'Invoice Date', sortable: true, render: (item) => formatDate(item.purchase_date) },
+        { key: 'total', header: 'Total', sortable: true, render: (item) => formatCurrency(item.total) },
         { key: 'paid_amount', header: 'Paid', render: (item) => formatCurrency(item.paid_amount) },
         { key: 'due_amount', header: 'Due', render: (item) => formatCurrency(item.due_amount) },
         {

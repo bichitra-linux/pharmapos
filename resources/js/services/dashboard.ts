@@ -3,7 +3,7 @@ import type { ApiResponse, DashboardSummary, SalesChartData, ExpiryAlert, LowSto
 
 export const dashboardService = {
     getSummary: async () => {
-        const res = await api.get<ApiResponse<DashboardSummary>>('/dashboard/summary');
+        const res = await api.get<ApiResponse<DashboardSummary>>('/dashboard');
         return res.data;
     },
 

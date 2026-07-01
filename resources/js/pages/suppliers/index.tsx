@@ -16,6 +16,7 @@ export default function SuppliersIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['suppliers', search, page],
         queryFn: () => suppliersService.list({ search, page, per_page: 15 }),
+        staleTime: 30_000,
     });
 
     const columns: Column<Supplier>[] = [
@@ -23,7 +24,6 @@ export default function SuppliersIndex() {
         { key: 'contact_person', header: 'Contact Person' },
         { key: 'phone', header: 'Phone' },
         { key: 'email', header: 'Email' },
-        { key: 'outstanding_balance', header: 'Balance', render: (item) => formatCurrency(item.outstanding_balance) },
     ];
 
     return (

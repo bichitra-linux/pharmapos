@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageLoader } from '@/components/ui/spinner';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Package } from 'lucide-react';
 
 export default function ShowPurchase() {
     const { id } = useParams();
@@ -32,7 +32,17 @@ export default function ShowPurchase() {
     });
 
     if (isLoading) return <PageLoader />;
-    if (!purchase) return <div>Purchase not found</div>;
+    if (!purchase) return (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <Package className="h-12 w-12 text-text-muted" />
+            <h2 className="text-lg font-semibold text-text">Purchase not found</h2>
+            <p className="text-sm text-text-muted">The purchase you're looking for doesn't exist.</p>
+            <Button variant="outline" onClick={() => navigate('/purchases')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Purchases
+            </Button>
+        </div>
+    );
 
     return (
         <div className="space-y-6">
@@ -60,28 +70,28 @@ export default function ShowPurchase() {
                     <CardHeader><CardTitle>Supplier</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-1">
                         <p className="font-medium">{purchase.supplier?.name}</p>
-                        <p className="text-gray-500">{purchase.supplier?.phone}</p>
-                        <p className="text-gray-500">{purchase.supplier?.address}</p>
+                        <p className="text-text-muted">{purchase.supplier?.phone}</p>
+                        <p className="text-text-muted">{purchase.supplier?.address}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader><CardTitle>Invoice Details</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-1">
-                        <div><span className="text-gray-500">Invoice Date:</span> {formatDate(purchase.invoice_date)}</div>
-                        <div><span className="text-gray-500">Due Date:</span> {purchase.due_date ? formatDate(purchase.due_date) : '-'}</div>
-                        <div><span className="text-gray-500">Supplier Invoice:</span> {purchase.supplier_invoice_number || '-'}</div>
-                        {purchase.grn_number && <div><span className="text-gray-500">GRN #:</span> {purchase.grn_number}</div>}
+                        <div><span className="text-text-muted">Invoice Date:</span> {formatDate(purchase.purchase_date)}</div>
+                        <div><span className="text-text-muted">Due Date:</span> {purchase.due_date ? formatDate(purchase.due_date) : '-'}</div>
+                        <div><span className="text-text-muted">Supplier Invoice:</span> {purchase.supplier_invoice_number || '-'}</div>
+                        {purchase.grn_number && <div><span className="text-text-muted">GRN #:</span> {purchase.grn_number}</div>}
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader><CardTitle>Amounts</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-1">
-                        <div><span className="text-gray-500">Subtotal:</span> {formatCurrency(purchase.subtotal)}</div>
-                        <div><span className="text-gray-500">Discount:</span> {formatCurrency(purchase.discount_amount)}</div>
-                        <div><span className="text-gray-500">Tax:</span> {formatCurrency(purchase.tax_amount)}</div>
-                        <div className="font-bold text-lg"><span className="text-gray-500 text-sm">Total:</span> {formatCurrency(purchase.total_amount)}</div>
-                        <div><span className="text-gray-500">Paid:</span> {formatCurrency(purchase.paid_amount)}</div>
-                        {purchase.due_amount > 0 && <div className="text-danger-600"><span className="text-gray-500">Due:</span> {formatCurrency(purchase.due_amount)}</div>}
+                        <div><span className="text-text-muted">Subtotal:</span> {formatCurrency(purchase.subtotal)}</div>
+                        <div><span className="text-text-muted">Discount:</span> {formatCurrency(purchase.discount)}</div>
+                        <div><span className="text-text-muted">Tax:</span> {formatCurrency(purchase.vat)}</div>
+                        <div className="font-bold text-lg"><span className="text-text-muted text-sm">Total:</span> {formatCurrency(purchase.total)}</div>
+                        <div><span className="text-text-muted">Paid:</span> {formatCurrency(purchase.paid_amount)}</div>
+                        {purchase.due_amount > 0 && <div className="text-danger-600"><span className="text-text-muted">Due:</span> {formatCurrency(purchase.due_amount)}</div>}
                     </CardContent>
                 </Card>
             </div>

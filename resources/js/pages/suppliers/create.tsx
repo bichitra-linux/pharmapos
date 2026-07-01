@@ -51,7 +51,7 @@ export default function CreateEditSupplier() {
         }
     }, [supplier]);
 
-    const updateField = (field: string, value: string | number) => {
+    const updateField = (field: keyof typeof form, value: string | number) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 

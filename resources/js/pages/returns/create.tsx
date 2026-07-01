@@ -19,7 +19,7 @@ export default function CreateReturn() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const endpoint = type === 'customer' ? '/customer-returns' : '/supplier-returns';
+            const endpoint = type === 'customer' ? '/sale-returns' : '/supplier-returns';
             await api.post(endpoint, {
                 [type === 'customer' ? 'sale_id' : 'purchase_id']: Number(referenceId),
                 reason,

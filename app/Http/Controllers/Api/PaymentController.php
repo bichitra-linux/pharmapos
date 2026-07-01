@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Sale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 final class PaymentController extends Controller
 {
@@ -170,32 +172,43 @@ final class PaymentController extends Controller
 
     public function callback(Request $request, string $gateway): JsonResponse
     {
-        $saleId = $request->get('sale_id') ?? $request->get('oid');
+        Log::info('Payment callback received', [
+            'gateway' => $gateway,
+            'request_data' => $request->except(['secret', 'key', 'token']),
+        ]);
 
-        if (! $saleId) {
-            // Try to find by invoice number
-            $invoiceNumber = $request->get('pid') ?? $request->get('purchase_order_id');
-            if ($invoiceNumber) {
-                $sale = Sale::where('invoice_number', $invoiceNumber)->first();
-                if ($sale) {
-                    $saleId = $sale->id;
-                }
-            }
-        }
-
-        if (! $saleId) {
+        $validGateways = ['esewa', 'khalti', 'fonepay', 'connectips'];
+        if (! in_array($gateway, $validGateways)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid callback: missing sale reference.',
+                'message' => 'Invalid gateway.',
             ], 400);
         }
 
-        $sale = Sale::find($saleId);
-        if (! $sale) {
+        $invoiceNumber = $request->get('pid') ?? $request->get('purchase_order_id') ?? $request->get('oid');
+        if (! $invoiceNumber) {
+            Log::warning('Payment callback missing invoice reference', ['gateway' => $gateway]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid callback: missing invoice reference.',
+            ], 400);
+        }
+
+        $sale = Sale::where('invoice_number', $invoiceNumber)->first();
+        if (! $sale || ! $sale->company_id) {
+            Log::warning('Payment callback sale not found', ['invoice_number' => $invoiceNumber, 'gateway' => $gateway]);
             return response()->json([
                 'success' => false,
                 'message' => 'Sale not found.',
             ], 404);
+        }
+
+        if ($sale->payment_status === 'paid') {
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment already verified.',
+                'data' => $sale->fresh(),
+            ]);
         }
 
         $verified = false;
@@ -203,7 +216,17 @@ final class PaymentController extends Controller
         switch ($gateway) {
             case 'esewa':
                 $refId = $request->get('refId');
-                $verified = ! empty($refId);
+                if ($refId) {
+                    $esewaConfig = config('services.esewa');
+                    $verificationResponse = Http::post($esewaConfig['verification_url'] ?? 'https://uat.esewa.com.np/epay/transrec', [
+                        'amt' => $sale->total_amount,
+                        'rid' => $refId,
+                        'pid' => $sale->invoice_number,
+                        'scd' => $esewaConfig['merchant_code'] ?? '',
+                    ]);
+                    $verified = $verificationResponse->successful()
+                        && str_contains($verificationResponse->body(), '<response_code>Success</response_code>');
+                }
                 break;
 
             case 'khalti':
@@ -215,20 +238,42 @@ final class PaymentController extends Controller
                     ])->post($khaltiConfig['verify_url'] ?? 'https://a.khalti.com/api/v2/epayment/lookup/', [
                         'pidx' => $token,
                     ]);
-                    $verified = $response->successful() && $response->json('status') === 'Completed';
+                    $verified = $response->successful()
+                        && $response->json('status') === 'Completed'
+                        && abs((float) $response->json('total_amount') - (float) ($sale->total_amount * 100)) < 1;
                 }
                 break;
 
             case 'fonepay':
+                $secretKey = config('services.fonepay.secret_key', '');
+                $signature = $request->get('signature');
+                if ($signature && $secretKey) {
+                    $expected = strtoupper(hash_hmac('sha512', $request->get('PRN', ''), $secretKey));
+                    $verified = hash_equals($expected, strtoupper($signature))
+                        && ($request->get('status') === 'success' || $request->get('RC') === 'Successful');
+                }
+                break;
+
             case 'connectips':
-                $verified = $request->get('status') === 'success' || $request->get('RC') === 'Successful';
+                $secretKey = config('services.connectips.secret_key', '');
+                $signature = $request->get('signature');
+                if ($signature && $secretKey) {
+                    $dataToVerify = $request->get('transaction_id', '') . $request->get('status', '') . $request->get('amount', '');
+                    $expected = strtoupper(hash_hmac('sha256', $dataToVerify, $secretKey));
+                    $verified = hash_equals($expected, strtoupper($signature));
+                }
                 break;
         }
 
         if ($verified) {
-            $sale->update([
-                'payment_status' => 'paid',
-                'payment_reference' => $request->get('refId') ?? $request->get('pidx') ?? $request->get('transaction_id'),
+            DB::transaction(function () use ($sale) {
+                $sale->update(['payment_status' => 'paid']);
+            });
+
+            Log::info('Payment verified successfully', [
+                'gateway' => $gateway,
+                'sale_id' => $sale->id,
+                'invoice_number' => $sale->invoice_number,
             ]);
 
             return response()->json([
@@ -237,6 +282,13 @@ final class PaymentController extends Controller
                 'data' => $sale->fresh(),
             ]);
         }
+
+        Log::warning('Payment verification failed', [
+            'gateway' => $gateway,
+            'sale_id' => $sale->id,
+            'invoice_number' => $sale->invoice_number,
+            'request_data' => $request->except(['secret', 'key', 'token']),
+        ]);
 
         return response()->json([
             'success' => false,

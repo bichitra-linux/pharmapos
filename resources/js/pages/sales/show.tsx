@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageLoader } from '@/components/ui/spinner';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, Receipt } from 'lucide-react';
 
 export default function ShowSale() {
     const { id } = useParams();
@@ -20,7 +20,17 @@ export default function ShowSale() {
     });
 
     if (isLoading) return <PageLoader />;
-    if (!sale) return <div>Sale not found</div>;
+    if (!sale) return (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <Receipt className="h-12 w-12 text-text-muted" />
+            <h2 className="text-lg font-semibold text-text">Sale not found</h2>
+            <p className="text-sm text-text-muted">The sale you're looking for doesn't exist.</p>
+            <Button variant="outline" onClick={() => navigate('/sales')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Sales
+            </Button>
+        </div>
+    );
 
     return (
         <div className="space-y-6">
@@ -31,8 +41,8 @@ export default function ShowSale() {
                         Back
                     </Button>
                     <h1 className="text-2xl font-bold">Sale #{sale.invoice_number}</h1>
-                    <Badge variant={sale.status === 'completed' ? 'success' : sale.status === 'cancelled' ? 'destructive' : 'default'}>
-                        {sale.status}
+                    <Badge variant={sale.payment_status === 'paid' ? 'success' : sale.payment_status === 'due' ? 'destructive' : 'warning'}>
+                        {sale.payment_status}
                     </Badge>
                 </div>
                 <Button variant="outline" onClick={() => window.print()}>
@@ -46,25 +56,25 @@ export default function ShowSale() {
                     <CardHeader><CardTitle>Customer</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-1">
                         <p className="font-medium">{sale.customer?.name || 'Walk-in Customer'}</p>
-                        {sale.customer?.phone && <p className="text-gray-500">{sale.customer.phone}</p>}
+                        {sale.customer?.phone && <p className="text-text-muted">{sale.customer.phone}</p>}
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader><CardTitle>Sale Details</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-1">
-                        <div><span className="text-gray-500">Date:</span> {formatDate(sale.created_at, 'dd/MM/yyyy HH:mm')}</div>
-                        <div><span className="text-gray-500">Cashier:</span> {sale.user?.name || '-'}</div>
-                        {sale.prescription_id && <div><span className="text-gray-500">Prescription:</span> #{sale.prescription_id}</div>}
+                        <div><span className="text-text-muted">Date:</span> {formatDate(sale.created_at, 'dd/MM/yyyy HH:mm')}</div>
+                        <div><span className="text-text-muted">Cashier:</span> {sale.dispensedBy?.name || '-'}</div>
+                        {sale.prescription_id && <div><span className="text-text-muted">Prescription:</span> #{sale.prescription_id}</div>}
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader><CardTitle>Payment</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-1">
-                        <div><span className="text-gray-500">Subtotal:</span> {formatCurrency(sale.subtotal)}</div>
-                        <div><span className="text-gray-500">Discount:</span> {formatCurrency(sale.discount_amount)}</div>
-                        <div><span className="text-gray-500">Tax:</span> {formatCurrency(sale.tax_amount)}</div>
+                        <div><span className="text-text-muted">Subtotal:</span> {formatCurrency(sale.subtotal)}</div>
+                        <div><span className="text-text-muted">Discount:</span> {formatCurrency(sale.discount_amount)}</div>
+                        <div><span className="text-text-muted">VAT ({sale.vat_percentage}%):</span> {formatCurrency(sale.vat_amount)}</div>
                         <div className="font-bold text-lg">{formatCurrency(sale.total_amount)}</div>
-                        <div><span className="text-gray-500">Paid:</span> {formatCurrency(sale.paid_amount)}</div>
+                        <div><span className="text-text-muted">Paid:</span> {formatCurrency(sale.paid_amount)}</div>
                         {sale.due_amount > 0 && <div className="text-danger-600">Due: {formatCurrency(sale.due_amount)}</div>}
                     </CardContent>
                 </Card>
@@ -92,10 +102,10 @@ export default function ShowSale() {
                                         <TableCell className="font-medium">{item.medicine?.brand_name || `Medicine #${item.medicine_id}`}</TableCell>
                                         <TableCell>{item.batch?.batch_number || '-'}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
-                                        <TableCell>{formatCurrency(item.unit_price)}</TableCell>
-                                        <TableCell>{item.discount_percent}%</TableCell>
-                                        <TableCell>{formatCurrency(item.tax_amount)}</TableCell>
-                                        <TableCell>{formatCurrency(item.total_amount)}</TableCell>
+                                        <TableCell>{formatCurrency(item.selling_price)}</TableCell>
+                                        <TableCell>{formatCurrency(item.discount)}</TableCell>
+                                        <TableCell>{formatCurrency(item.vat)}</TableCell>
+                                        <TableCell>{formatCurrency(item.total)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

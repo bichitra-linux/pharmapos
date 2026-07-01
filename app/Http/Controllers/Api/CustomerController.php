@@ -38,6 +38,29 @@ final class CustomerController extends Controller
         ]);
     }
 
+    public function search(Request $request): JsonResponse
+    {
+        $query = Customer::where('company_id', $request->user()->company_id)
+            ->where('is_active', true);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('name')
+            ->paginate($request->get('per_page', 10));
+
+        return response()->json([
+            'success' => true,
+            'data' => $customers,
+        ]);
+    }
+
     public function store(StoreCustomerRequest $request): JsonResponse
     {
         $customer = Customer::create([

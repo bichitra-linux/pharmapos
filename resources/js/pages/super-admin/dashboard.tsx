@@ -24,10 +24,10 @@ export default function SuperAdminDashboardPage() {
     if (isLoading) return <PageLoader />;
 
     const statCards = [
-        { title: 'Total Tenants', value: dashboard?.total_tenants ?? 0, icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { title: 'Total Tenants', value: dashboard?.total_tenants ?? 0, icon: Building2, color: 'text-primary-600', bg: 'bg-primary-50', description: 'All registered pharmacies', span: true },
         { title: 'Active', value: dashboard?.active_tenants ?? 0, icon: TrendingUp, color: 'text-success-600', bg: 'bg-success-50' },
         { title: 'Suspended', value: dashboard?.suspended_tenants ?? 0, icon: PauseCircle, color: 'text-danger-600', bg: 'bg-danger-50' },
-        { title: 'MRR', value: formatCurrency(dashboard?.mrr ?? 0), icon: DollarSign, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { title: 'MRR', value: formatCurrency(dashboard?.mrr ?? 0), icon: DollarSign, color: 'text-primary-600', bg: 'bg-primary-50' },
         { title: 'Expiring Soon', value: dashboard?.expiring_soon ?? 0, icon: AlertTriangle, color: 'text-warning-600', bg: 'bg-warning-50' },
         { title: 'New This Month', value: dashboard?.new_this_month ?? 0, icon: UserPlus, color: 'text-success-600', bg: 'bg-success-50' },
     ];
@@ -38,14 +38,17 @@ export default function SuperAdminDashboardPage() {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {statCards.map((card) => (
-                    <Card key={card.title}>
+                    <Card key={card.title} className={card.span ? 'lg:col-span-2' : undefined}>
                         <CardContent className="flex items-center gap-4 p-6">
                             <div className={`rounded-lg p-3 ${card.bg}`}>
-                                <card.icon className={`h-6 w-6 ${card.color}`} />
+                                <card.icon className={`h-6 w-6 ${card.color}`} aria-hidden="true" />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">{card.title}</p>
+                                <p className="text-sm text-text-muted">{card.title}</p>
                                 <p className="text-2xl font-bold">{card.value}</p>
+                                {card.description && (
+                                    <p className="text-xs text-text-muted">{card.description}</p>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -73,10 +76,10 @@ export default function SuperAdminDashboardPage() {
                                                 className="group relative flex-1"
                                             >
                                                 <div
-                                                    className="bg-indigo-500 hover:bg-indigo-600 transition-colors"
+                                                    className="bg-primary-500 hover:bg-primary-600 transition-colors"
                                                     style={{ height: `${Math.max(2, height)}%` }}
                                                 />
-                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white">
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap rounded bg-surface px-2 py-1 text-xs text-text shadow-lg border border-border">
                                                     {item.month}: {formatCurrency(item.total)}
                                                 </div>
                                             </div>
@@ -84,7 +87,7 @@ export default function SuperAdminDashboardPage() {
                                     })}
                                 </div>
                             ) : (
-                                <div className="flex h-full items-center justify-center text-gray-400">
+                                <div className="flex h-full items-center justify-center text-text-muted">
                                     No revenue data
                                 </div>
                             )}
@@ -95,7 +98,7 @@ export default function SuperAdminDashboardPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Building2 className="h-5 w-5 text-indigo-500" />
+                            <Building2 className="h-5 w-5 text-primary-500" />
                             Recent Tenants
                         </CardTitle>
                     </CardHeader>
@@ -113,7 +116,7 @@ export default function SuperAdminDashboardPage() {
                                 {dashboard?.recent_tenants?.slice(0, 5).map((tenant) => (
                                     <TableRow key={tenant.id}>
                                         <TableCell className="font-medium">{tenant.name}</TableCell>
-                                        <TableCell className="text-sm text-gray-500">{tenant.email}</TableCell>
+                                        <TableCell className="text-sm text-text-muted">{tenant.email}</TableCell>
                                         <TableCell>
                                             {tenant.suspended_at ? (
                                                 <Badge variant="destructive">Suspended</Badge>
@@ -123,14 +126,14 @@ export default function SuperAdminDashboardPage() {
                                                 <Badge variant="secondary">Inactive</Badge>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-sm text-gray-500">
+                                        <TableCell className="text-sm text-text-muted">
                                             {formatDate(tenant.created_at)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
                                 {(!dashboard?.recent_tenants || dashboard.recent_tenants.length === 0) && (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-gray-500">
+                                        <TableCell colSpan={4} className="text-center text-text-muted">
                                             No tenants yet
                                         </TableCell>
                                     </TableRow>

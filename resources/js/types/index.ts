@@ -22,6 +22,11 @@ export interface Company {
     address: string;
     city: string;
     state: string;
+    country: string;
+    local_level: string;
+    registration_number: string;
+    google_maps_link: string;
+    phone_country_code: string;
     pan_number: string;
     vat_number: string;
     logo: string | null;
@@ -64,6 +69,8 @@ export interface Medicine {
     description: string | null;
     storage_conditions: string | null;
     is_temperature_sensitive: boolean;
+    allow_piece_selling: boolean;
+    piece_unit_label: string | null;
     created_at: string;
     updated_at: string;
     manufacturer?: Manufacturer;
@@ -82,6 +89,7 @@ export interface MedicineBatch {
     manufacturing_date: string | null;
     expiry_date: string;
     quantity_in_stock: number;
+    quantity_in_pieces: number;
     purchase_price_per_unit: number;
     mrp_per_unit: number;
     selling_price_per_unit: number;
@@ -142,8 +150,7 @@ export interface Customer {
     blood_group: string | null;
     allergies: string | null;
     credit_limit: number;
-    outstanding_balance: number;
-    total_purchases: number;
+    total_dues: number;
     loyalty_points: number;
     is_active: boolean;
     created_at: string;
@@ -163,7 +170,6 @@ export interface Supplier {
     pan_number: string | null;
     bank_details: string | null;
     credit_limit: number;
-    outstanding_balance: number;
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -173,25 +179,26 @@ export interface Sale {
     id: number;
     company_id: number;
     outlet_id: number;
-    user_id: number;
-    customer_id: number | null;
+    register_id: number | null;
     invoice_number: string;
+    customer_id: number | null;
     prescription_id: number | null;
     subtotal: number;
     discount_amount: number;
-    discount_percent: number;
-    tax_amount: number;
+    discount_type: 'percentage' | 'fixed' | null;
+    vat_amount: number;
+    vat_percentage: number;
     total_amount: number;
     paid_amount: number;
     due_amount: number;
-    change_amount: number;
-    payment_status: 'paid' | 'partial' | 'unpaid';
-    status: 'completed' | 'held' | 'cancelled' | 'returned';
+    payment_status: 'paid' | 'partial' | 'due' | 'refunded';
+    sale_type: 'walk_in' | 'online' | 'delivery';
+    dispensed_by: number | null;
     notes: string | null;
     created_at: string;
     updated_at: string;
     customer?: Customer;
-    user?: User;
+    dispensedBy?: User;
     items?: SaleItem[];
     payments?: SalePayment[];
 }
@@ -202,12 +209,21 @@ export interface SaleItem {
     medicine_id: number;
     batch_id: number;
     quantity: number;
-    unit_price: number;
-    discount_percent: number;
-    discount_amount: number;
-    tax_rate: number;
-    tax_amount: number;
-    total_amount: number;
+    unit_type: string;
+    mrp: number;
+    selling_price: number;
+    discount: number;
+    vat: number;
+    total: number;
+    prescription_required: boolean;
+    units_per_pack?: number;
+    sell_mode?: string;
+    pieces_quantity?: number;
+    medicine_name?: string | null;
+    medicine_generic_name?: string | null;
+    medicine_strength?: string | null;
+    medicine_manufacturer?: string | null;
+    medicine_dosage_form?: string | null;
     created_at: string;
     updated_at: string;
     medicine?: Medicine;
@@ -220,9 +236,8 @@ export interface SalePayment {
     payment_method_id: number;
     amount: number;
     reference_number: string | null;
-    notes: string | null;
+    gateway_response: Record<string, unknown> | null;
     created_at: string;
-    updated_at: string;
     payment_method?: PaymentMethod;
 }
 
@@ -244,12 +259,12 @@ export interface Purchase {
     supplier_id: number;
     purchase_number: string;
     supplier_invoice_number: string | null;
-    invoice_date: string;
+    purchase_date: string;
     due_date: string;
     subtotal: number;
-    discount_amount: number;
-    tax_amount: number;
-    total_amount: number;
+    discount: number;
+    vat: number;
+    total: number;
     paid_amount: number;
     due_amount: number;
     status: 'draft' | 'ordered' | 'received' | 'cancelled';
@@ -337,18 +352,15 @@ export interface CustomerReturn {
     id: number;
     company_id: number;
     sale_id: number;
-    customer_id: number | null;
     return_number: string;
     reason: string;
     total_amount: number;
     refund_amount: number;
     refund_method: string;
-    status: 'pending' | 'approved' | 'completed' | 'rejected';
     notes: string | null;
     created_at: string;
     updated_at: string;
     sale?: Sale;
-    customer?: Customer;
     items?: CustomerReturnItem[];
 }
 
@@ -376,12 +388,12 @@ export interface SupplierReturn {
     reason: string;
     total_amount: number;
     refund_amount: number;
-    status: 'pending' | 'approved' | 'completed' | 'rejected';
+    refund_status: 'pending' | 'received' | 'cancelled';
+    supplier_name?: string;
+    purchase_number?: string;
     notes: string | null;
     created_at: string;
     updated_at: string;
-    purchase?: Purchase;
-    supplier?: Supplier;
     items?: SupplierReturnItem[];
 }
 
@@ -437,7 +449,6 @@ export interface NarcoticsRegister {
     customer_id: number | null;
     prescription_id: number | null;
     sale_id: number | null;
-    date: string;
     quantity: number;
     balance: number;
     doctor_name: string;
@@ -448,7 +459,8 @@ export interface NarcoticsRegister {
     notes: string | null;
     created_at: string;
     updated_at: string;
-    medicine?: Medicine;
+    brand_name?: string;
+    generic_name?: string;
     customer?: Customer;
 }
 

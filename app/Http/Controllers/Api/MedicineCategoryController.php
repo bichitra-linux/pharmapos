@@ -27,14 +27,29 @@ final class MedicineCategoryController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $companyId = $request->user()->company_id;
+
         $request->validate([
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:medicine_categories,id',
             'description' => 'nullable|string',
         ]);
 
+        // Validate parent belongs to same company
+        if ($request->parent_id) {
+            $parentExists = MedicineCategory::where('id', $request->parent_id)
+                ->where('company_id', $companyId)
+                ->exists();
+            if (! $parentExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected parent category does not belong to your company.',
+                ], 422);
+            }
+        }
+
         $category = MedicineCategory::create([
-            'company_id' => $request->user()->company_id,
+            'company_id' => $companyId,
             'name' => $request->name,
             'parent_id' => $request->parent_id,
             'description' => $request->description,
@@ -74,6 +89,19 @@ final class MedicineCategoryController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
         ]);
+
+        // Validate parent belongs to same company
+        if ($request->parent_id) {
+            $parentExists = MedicineCategory::where('id', $request->parent_id)
+                ->where('company_id', $request->user()->company_id)
+                ->exists();
+            if (! $parentExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected parent category does not belong to your company.',
+                ], 422);
+            }
+        }
 
         $category->update($request->only(['name', 'parent_id', 'description', 'is_active']));
 

@@ -21,14 +21,12 @@ class SupplierPayment extends Model
         'payment_method',
         'reference_number',
         'notes',
-        'paid_at',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
-            'paid_at' => 'datetime',
         ];
     }
 

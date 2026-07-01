@@ -21,7 +21,7 @@ export default function CreateEditUser() {
         queryKey: ['user', id],
         queryFn: async () => {
             const res = await api.get(`/users/${id}`);
-            return res.data.data as User;
+            return res.data.data as User | undefined;
         },
         enabled: isEdit,
     });
@@ -50,7 +50,7 @@ export default function CreateEditUser() {
         }
     }, [user]);
 
-    const updateField = (field: string, value: string | number | boolean) => {
+    const updateField = (field: keyof typeof form, value: string | number | boolean) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -91,11 +91,11 @@ export default function CreateEditUser() {
                         <CardTitle>User Information</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Input label="Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} required />
                             <Input label="Email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} required />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Input label="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} />
                             <Select
                                 label="Role"
@@ -104,7 +104,7 @@ export default function CreateEditUser() {
                                 onChange={(v) => updateField('role', v)}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Input
                                 label="Password"
                                 type="password"
@@ -126,7 +126,7 @@ export default function CreateEditUser() {
                                 type="checkbox"
                                 checked={form.is_active}
                                 onChange={(e) => updateField('is_active', e.target.checked)}
-                                className="rounded border-gray-300"
+                                className="rounded border-border"
                             />
                             Active
                         </label>

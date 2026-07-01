@@ -18,30 +18,40 @@ export default function DashboardPage() {
         queryKey: ['dashboard', 'summary'],
         queryFn: () => dashboardService.getSummary(),
         select: (res) => res.data,
+        staleTime: 60_000,
+        placeholderData: (prev) => prev,
     });
 
     const { data: expiryAlerts } = useQuery({
         queryKey: ['dashboard', 'expiry-alerts'],
         queryFn: () => dashboardService.getExpiryAlerts(30),
         select: (res) => res.data,
+        staleTime: 60_000,
+        placeholderData: (prev) => prev,
     });
 
     const { data: lowStock } = useQuery({
         queryKey: ['dashboard', 'low-stock'],
         queryFn: () => dashboardService.getLowStock(),
         select: (res) => res.data,
+        staleTime: 60_000,
+        placeholderData: (prev) => prev,
     });
 
     const { data: topMedicines } = useQuery({
         queryKey: ['dashboard', 'top-medicines'],
         queryFn: () => dashboardService.getTopMedicines({ limit: 5 }),
         select: (res) => res.data,
+        staleTime: 60_000,
+        placeholderData: (prev) => prev,
     });
 
     const { data: salesChart } = useQuery({
         queryKey: ['dashboard', 'sales-chart'],
         queryFn: () => dashboardService.getSalesChart(30),
         select: (res) => res.data,
+        staleTime: 60_000,
+        placeholderData: (prev) => prev,
     });
 
     if (isLoading) return <PageLoader />;
@@ -88,7 +98,7 @@ export default function DashboardPage() {
                         {salesChart && salesChart.length > 0 ? (
                             <div className="flex h-full items-end gap-0.5">
                                 {(() => {
-                                    const maxRevenue = Math.max(...salesChart.map((d) => d.revenue));
+                                    const maxRevenue = salesChart.length > 0 ? Math.max(...salesChart.map((d) => d.revenue)) : 0;
                                     return salesChart.map((day, i) => {
                                         const height = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
                                         return (

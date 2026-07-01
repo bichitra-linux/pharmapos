@@ -13,18 +13,18 @@ class Substitute extends Model
     use HasFactory;
 
     protected $fillable = [
-        'medicine_one_id',
-        'medicine_two_id',
+        'medicine_id_1',
+        'medicine_id_2',
         'notes',
     ];
 
     public function medicineOne(): BelongsTo
     {
-        return $this->belongsTo(Medicine::class, 'medicine_one_id');
+        return $this->belongsTo(Medicine::class, 'medicine_id_1');
     }
 
     public function medicineTwo(): BelongsTo
     {
-        return $this->belongsTo(Medicine::class, 'medicine_two_id');
+        return $this->belongsTo(Medicine::class, 'medicine_id_2');
     }
 }

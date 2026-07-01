@@ -24,7 +24,7 @@ final class MedicineController extends Controller
                     ->where('quantity_in_stock', '>', 0)
                     ->whereDate('expiry_date', '>', now())
                     ->orderBy('expiry_date')
-                    ->select('id', 'medicine_id', 'outlet_id', 'batch_number', 'expiry_date', 'quantity_in_stock', 'mrp_per_unit', 'selling_price_per_unit');
+                    ->select('id', 'medicine_id', 'outlet_id', 'batch_number', 'expiry_date', 'quantity_in_stock', 'quantity_in_pieces', 'mrp_per_unit', 'selling_price_per_unit');
             }]);
 
         if ($request->filled('search')) {
@@ -62,7 +62,10 @@ final class MedicineController extends Controller
             $query->where('is_active', $request->boolean('is_active'));
         }
 
-        $medicines = $query->orderBy($request->get('sort_by', 'brand_name'), $request->get('sort_dir', 'asc'))
+        $allowedSorts = ['brand_name', 'generic_name', 'created_at', 'schedule_type', 'dosage_form'];
+        $sortBy = in_array($request->get('sort_by'), $allowedSorts) ? $request->get('sort_by') : 'brand_name';
+
+        $medicines = $query->orderBy($sortBy, $request->get('sort_dir', 'asc'))
             ->paginate($request->get('per_page', 25));
 
         return response()->json([
@@ -73,8 +76,32 @@ final class MedicineController extends Controller
 
     public function store(StoreMedicineRequest $request): JsonResponse
     {
+        $companyId = $request->user()->company_id;
+
+        // Soft duplicate check: warn if same brand+strength+manufacturer exists
+        $duplicate = Medicine::where('company_id', $companyId)
+            ->where('brand_name', $request->brand_name)
+            ->where('manufacturer_id', $request->manufacturer_id)
+            ->where('id', '!=', $request->route('medicine') ?? 0)
+            ->when($request->strength, fn ($q, $v) => $q->where('strength', $v))
+            ->first();
+
+        if ($duplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Similar medicine already exists.',
+                'warning' => 'duplicate',
+                'similar_id' => $duplicate->id,
+                'similar' => [
+                    'brand_name' => $duplicate->brand_name,
+                    'strength' => $duplicate->strength,
+                    'manufacturer' => $duplicate->manufacturer?->name,
+                ],
+            ], 409);
+        }
+
         $medicine = Medicine::create([
-            'company_id' => $request->user()->company_id,
+            'company_id' => $companyId,
             'brand_name' => $request->brand_name,
             'generic_name' => $request->generic_name,
             'medicine_category_id' => $request->medicine_category_id,

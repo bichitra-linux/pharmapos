@@ -11,13 +11,32 @@ use Illuminate\Support\Facades\Hash;
 
 class DummyDataSeeder extends Seeder
 {
-    private int $companyId = 1;
-    private int $outletId = 1;
-    private int $userId = 1;
+    private int $companyId;
+    private int $outletId;
+    private int $userId;
 
     public function run(): void
     {
         $now = now();
+
+        $company = DB::table('companies')->first();
+        if (!$company) {
+            return;
+        }
+        $this->companyId = $company->id;
+
+        $outlet = DB::table('outlets')->where('company_id', $this->companyId)->first();
+        if (!$outlet) {
+            return;
+        }
+        $this->outletId = $outlet->id;
+
+        $user = DB::table('users')->where('company_id', $this->companyId)->first();
+        if (!$user) {
+            return;
+        }
+        $this->userId = $user->id;
+
         $companyId = $this->companyId;
         $outletId = $this->outletId;
 
@@ -93,18 +112,18 @@ class DummyDataSeeder extends Seeder
         // ── Medicines ──────────────────────────────────────────────
         $medicines = [];
         $medicineData = [
-            ['brand' => 'Paracetamol 500mg', 'generic' => 'Paracetamol', 'salt' => 1, 'cat' => 1, 'mfg' => 1, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'OTC'],
-            ['brand' => 'Amoxicillin 250mg', 'generic' => 'Amoxicillin', 'salt' => 2, 'cat' => 2, 'mfg' => 2, 'form' => 'capsule', 'strength' => '250mg', 'unit' => 'strip', 'schedule' => 'H'],
-            ['brand' => 'Metformin 500mg', 'generic' => 'Metformin', 'salt' => 3, 'cat' => 3, 'mfg' => 3, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'H'],
-            ['brand' => 'Amlodipine 5mg', 'generic' => 'Amlodipine', 'salt' => 4, 'cat' => 4, 'mfg' => 4, 'form' => 'tablet', 'strength' => '5mg', 'unit' => 'strip', 'schedule' => 'H'],
-            ['brand' => 'Omeprazole 20mg', 'generic' => 'Omeprazole', 'salt' => 5, 'cat' => 5, 'mfg' => 5, 'form' => 'capsule', 'strength' => '20mg', 'unit' => 'strip', 'schedule' => 'OTC'],
-            ['brand' => 'Cetirizine 10mg', 'generic' => 'Cetirizine', 'salt' => 6, 'cat' => 7, 'mfg' => 6, 'form' => 'tablet', 'strength' => '10mg', 'unit' => 'strip', 'schedule' => 'OTC'],
-            ['brand' => 'Azithromycin 500mg', 'generic' => 'Azithromycin', 'salt' => 7, 'cat' => 2, 'mfg' => 7, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'H'],
-            ['brand' => 'Ibuprofen 400mg', 'generic' => 'Ibuprofen', 'salt' => 8, 'cat' => 1, 'mfg' => 8, 'form' => 'tablet', 'strength' => '400mg', 'unit' => 'strip', 'schedule' => 'OTC'],
-            ['brand' => 'Losartan 50mg', 'generic' => 'Losartan', 'salt' => 9, 'cat' => 4, 'mfg' => 9, 'form' => 'tablet', 'strength' => '50mg', 'unit' => 'strip', 'schedule' => 'H'],
-            ['brand' => 'Pantoprazole 40mg', 'generic' => 'Pantoprazole', 'salt' => 10, 'cat' => 5, 'mfg' => 10, 'form' => 'tablet', 'strength' => '40mg', 'unit' => 'strip', 'schedule' => 'OTC'],
-            ['brand' => 'Ciprofloxacin 500mg', 'generic' => 'Ciprofloxacin', 'salt' => 11, 'cat' => 2, 'mfg' => 1, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'H'],
-            ['brand' => 'Diclofenac Gel', 'generic' => 'Diclofenac', 'salt' => 12, 'cat' => 1, 'mfg' => 2, 'form' => 'gel', 'strength' => '1%', 'unit' => 'tube', 'schedule' => 'OTC'],
+            ['brand' => 'Paracetamol 500mg', 'generic' => 'Paracetamol', 'salt' => 1, 'cat' => 1, 'mfg' => 1, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'otc'],
+            ['brand' => 'Amoxicillin 250mg', 'generic' => 'Amoxicillin', 'salt' => 2, 'cat' => 2, 'mfg' => 2, 'form' => 'capsule', 'strength' => '250mg', 'unit' => 'strip', 'schedule' => 'h'],
+            ['brand' => 'Metformin 500mg', 'generic' => 'Metformin', 'salt' => 3, 'cat' => 3, 'mfg' => 3, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'h'],
+            ['brand' => 'Amlodipine 5mg', 'generic' => 'Amlodipine', 'salt' => 4, 'cat' => 4, 'mfg' => 4, 'form' => 'tablet', 'strength' => '5mg', 'unit' => 'strip', 'schedule' => 'h'],
+            ['brand' => 'Omeprazole 20mg', 'generic' => 'Omeprazole', 'salt' => 5, 'cat' => 5, 'mfg' => 5, 'form' => 'capsule', 'strength' => '20mg', 'unit' => 'strip', 'schedule' => 'otc'],
+            ['brand' => 'Cetirizine 10mg', 'generic' => 'Cetirizine', 'salt' => 6, 'cat' => 7, 'mfg' => 6, 'form' => 'tablet', 'strength' => '10mg', 'unit' => 'strip', 'schedule' => 'otc'],
+            ['brand' => 'Azithromycin 500mg', 'generic' => 'Azithromycin', 'salt' => 7, 'cat' => 2, 'mfg' => 7, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'h'],
+            ['brand' => 'Ibuprofen 400mg', 'generic' => 'Ibuprofen', 'salt' => 8, 'cat' => 1, 'mfg' => 8, 'form' => 'tablet', 'strength' => '400mg', 'unit' => 'strip', 'schedule' => 'otc'],
+            ['brand' => 'Losartan 50mg', 'generic' => 'Losartan', 'salt' => 9, 'cat' => 4, 'mfg' => 9, 'form' => 'tablet', 'strength' => '50mg', 'unit' => 'strip', 'schedule' => 'h'],
+            ['brand' => 'Pantoprazole 40mg', 'generic' => 'Pantoprazole', 'salt' => 10, 'cat' => 5, 'mfg' => 10, 'form' => 'tablet', 'strength' => '40mg', 'unit' => 'strip', 'schedule' => 'otc'],
+            ['brand' => 'Ciprofloxacin 500mg', 'generic' => 'Ciprofloxacin', 'salt' => 11, 'cat' => 2, 'mfg' => 1, 'form' => 'tablet', 'strength' => '500mg', 'unit' => 'strip', 'schedule' => 'h'],
+            ['brand' => 'Diclofenac Gel', 'generic' => 'Diclofenac', 'salt' => 12, 'cat' => 1, 'mfg' => 2, 'form' => 'gel', 'strength' => '1%', 'unit' => 'tube', 'schedule' => 'otc'],
         ];
 
         foreach ($medicineData as $m) {
@@ -121,7 +140,7 @@ class DummyDataSeeder extends Seeder
                 'units_per_pack' => $m['unit'] === 'strip' ? 10 : 1,
                 'schedule_type' => $m['schedule'],
                 'hsn_code' => 'HSN' . rand(1000, 9999),
-                'is_prescription_required' => $m['schedule'] === 'H',
+                'is_prescription_required' => in_array($m['schedule'], ['h', 'h1', 'x']),
                 'is_active' => true,
                 'barcode' => '89012345' . str_pad((string) count($medicines), 4, '0', STR_PAD_LEFT),
                 'image' => null,
@@ -271,7 +290,7 @@ class DummyDataSeeder extends Seeder
             // Create payment
             DB::table('sale_payments')->insert([
                 'sale_id' => $saleId,
-                'payment_method_id' => ($i % 3 === 1) ? 2 : 1, // Cash or eSewa
+                'payment_method_id' => ($i % 3 === 1) ? 2 : 1,
                 'amount' => round($paidAmount, 2),
                 'reference_number' => $i % 3 === 1 ? 'ESEWA-' . rand(100000, 999999) : null,
                 'gateway_response' => null,
@@ -327,8 +346,8 @@ class DummyDataSeeder extends Seeder
                     'purchase_id' => $purchaseId,
                     'medicine_id' => $medicines[$medIdx],
                     'batch_number' => 'PB-' . str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT) . '-' . ($j + 1),
-                    'manufacturing_date' => $purchaseDate->subMonths(3)->format('Y-m-d'),
-                    'expiry_date' => $purchaseDate->addMonths(24)->format('Y-m-d'),
+                    'manufacturing_date' => $purchaseDate->copy()->subMonths(3)->format('Y-m-d'),
+                    'expiry_date' => $purchaseDate->copy()->addMonths(24)->format('Y-m-d'),
                     'quantity' => $qty,
                     'purchase_price' => round($purchasePrice, 2),
                     'mrp' => round($mrp, 2),
@@ -385,7 +404,6 @@ class DummyDataSeeder extends Seeder
                 'updated_at' => $rxDate->format('Y-m-d H:i:s'),
             ]);
 
-            // Prescription items
             for ($j = 0; $j < rand(2, 4); $j++) {
                 $medIdx = ($i * 2 + $j) % count($medicines);
                 DB::table('prescription_items')->insert([
@@ -449,7 +467,6 @@ class DummyDataSeeder extends Seeder
                 'refund_amount' => round($returnAmount, 2),
             ]);
 
-            // Restore batch stock
             DB::table('medicine_batches')->where('id', $item->batch_id)->increment('quantity_in_stock', $returnQty);
         }
 
@@ -482,7 +499,7 @@ class DummyDataSeeder extends Seeder
             DB::table('supplier_return_items')->insert([
                 'supplier_return_id' => $supplierReturnId,
                 'medicine_id' => $item->medicine_id,
-                'batch_id' => $batches[0], // dummy batch
+                'batch_id' => $batches[0],
                 'quantity' => $returnQty,
                 'amount' => round($returnAmount, 2),
                 'reason' => 'Return to supplier',
@@ -548,15 +565,12 @@ class DummyDataSeeder extends Seeder
         }
 
         // ── Substitutes ────────────────────────────────────────────
-        // Create substitute mappings between medicines in the same category
         $substitutePairs = [
-            [0, 7],   // Paracetamol ↔ Ibuprofen (both analgesics)
-            [1, 6],   // Amoxicillin ↔ Azithromycin (both antibiotics)
-            [1, 10],  // Amoxicillin ↔ Ciprofloxacin (both antibiotics)
-            [2, 3],   // Metformin ↔ Amlodipine (different but often co-prescribed)
-            [3, 8],   // Amlodipine ↔ Losartan (both cardiovascular)
-            [4, 9],   // Omeprazole ↔ Pantoprazole (both PPIs)
-            [5, 5],   // Cetirizine self (no-op, skip)
+            [0, 7],   // Paracetamol ↔ Ibuprofen
+            [1, 6],   // Amoxicillin ↔ Azithromycin
+            [1, 10],  // Amoxicillin ↔ Ciprofloxacin
+            [3, 8],   // Amlodipine ↔ Losartan
+            [4, 9],   // Omeprazole ↔ Pantoprazole
             [6, 10],  // Azithromycin ↔ Ciprofloxacin
             [7, 0],   // Ibuprofen ↔ Paracetamol
             [8, 3],   // Losartan ↔ Amlodipine

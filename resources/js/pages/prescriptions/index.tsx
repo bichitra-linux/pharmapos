@@ -16,6 +16,7 @@ export default function PrescriptionsIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['prescriptions', page],
         queryFn: () => prescriptionsService.list({ page, per_page: 15 }),
+        staleTime: 30_000,
     });
 
     const columns: Column<Prescription>[] = [

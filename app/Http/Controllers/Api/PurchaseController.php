@@ -182,11 +182,16 @@ final class PurchaseController extends Controller
             $outletId = $request->user()->outlet_id;
             $companyId = $request->user()->company_id;
 
+            // Batch-fetch purchase items to avoid N+1 queries
+            $purchaseItemIds = collect($request->items)->pluck('purchase_item_id');
+            $purchaseItems = DB::table('purchase_items')
+                ->where('purchase_id', $purchase->id)
+                ->whereIn('id', $purchaseItemIds)
+                ->get()
+                ->keyBy('id');
+
             foreach ($request->items as $receivedItem) {
-                $purchaseItem = DB::table('purchase_items')
-                    ->where('id', $receivedItem['purchase_item_id'])
-                    ->where('purchase_id', $purchase->id)
-                    ->first();
+                $purchaseItem = $purchaseItems->get($receivedItem['purchase_item_id']);
 
                 if (! $purchaseItem) {
                     throw new \Exception("Purchase item {$receivedItem['purchase_item_id']} not found.");
@@ -197,13 +202,15 @@ final class PurchaseController extends Controller
                     throw new \Exception("Cannot receive item with expired batch {$purchaseItem->batch_number}.");
                 }
 
-                // Update received quantity using parameterized query (Fix SQL injection)
+                // Track received quantity separately (keep 'quantity' as ordered amount)
                 DB::table('purchase_items')
                     ->where('id', $purchaseItem->id)
                     ->update([
-                        'quantity' => DB::raw('quantity + ' . (float) $receivedItem['received_quantity']),
                         'updated_at' => now(),
                     ]);
+                DB::table('purchase_items')
+                    ->where('id', $purchaseItem->id)
+                    ->increment('received_quantity', (float) $receivedItem['received_quantity']);
 
                 // Create or update batch
                 $existingBatch = DB::table('medicine_batches')
@@ -212,13 +219,24 @@ final class PurchaseController extends Controller
                     ->where('outlet_id', $outletId)
                     ->first();
 
+                // Get units_per_pack for piece calculation
+                $medicine = DB::table('medicines')->find($purchaseItem->medicine_id);
+                $packSize = (int) ($medicine->units_per_pack ?? 1);
+                $receivedQty = (float) $receivedItem['received_quantity'];
+
                 if ($existingBatch) {
                     DB::table('medicine_batches')
                         ->where('id', $existingBatch->id)
-                        ->update([
-                            'quantity_in_stock' => DB::raw('quantity_in_stock + ' . (float) $receivedItem['received_quantity']),
-                            'updated_at' => now(),
-                        ]);
+                        ->update(['updated_at' => now()]);
+                    DB::table('medicine_batches')
+                        ->where('id', $existingBatch->id)
+                        ->increment('quantity_in_stock', $receivedQty);
+                    DB::table('medicine_batches')
+                        ->where('id', $existingBatch->id)
+                        ->increment('quantity_in_pieces', $receivedQty * $packSize);
+                    DB::table('medicine_batches')
+                        ->where('id', $existingBatch->id)
+                        ->increment('received_pieces', $receivedQty * $packSize);
                 } else {
                     DB::table('medicine_batches')->insert([
                         'company_id' => $companyId,
@@ -227,7 +245,9 @@ final class PurchaseController extends Controller
                         'batch_number' => $purchaseItem->batch_number,
                         'manufacturing_date' => $purchaseItem->manufacturing_date,
                         'expiry_date' => $purchaseItem->expiry_date,
-                        'quantity_in_stock' => $receivedItem['received_quantity'],
+                        'quantity_in_stock' => $receivedQty,
+                        'quantity_in_pieces' => $receivedQty * $packSize,
+                        'received_pieces' => $receivedQty * $packSize,
                         'purchase_price_per_unit' => $purchaseItem->purchase_price,
                         'mrp_per_unit' => $purchaseItem->mrp,
                         'selling_price_per_unit' => $purchaseItem->selling_price,
@@ -238,12 +258,12 @@ final class PurchaseController extends Controller
                 }
             }
 
-            // Check if fully received
+            // Check if fully received using received_quantity vs ordered quantity
             $allItems = DB::table('purchase_items')
                 ->where('purchase_id', $purchase->id)
                 ->get();
 
-            $fullyReceived = $allItems->every(fn ($item) => $item->quantity >= $item->total / max((float) $item->purchase_price, 0.01));
+            $fullyReceived = $allItems->every(fn ($item) => (float) ($item->received_quantity ?? 0) >= (float) $item->quantity);
 
             $purchase->update([
                 'status' => $fullyReceived ? 'received' : 'draft',

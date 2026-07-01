@@ -16,14 +16,14 @@ export default function CustomersIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['customers', search, page],
         queryFn: () => customersService.list({ search, page, per_page: 15 }),
+        staleTime: 30_000,
     });
 
     const columns: Column<Customer>[] = [
         { key: 'name', header: 'Name', sortable: true },
         { key: 'phone', header: 'Phone' },
         { key: 'email', header: 'Email' },
-        { key: 'total_purchases', header: 'Purchases', sortable: true, render: (item) => formatCurrency(item.total_purchases) },
-        { key: 'outstanding_balance', header: 'Balance', render: (item) => formatCurrency(item.outstanding_balance) },
+        { key: 'total_dues', header: 'Dues', render: (item) => formatCurrency(item.total_dues) },
         { key: 'loyalty_points', header: 'Points', render: (item) => item.loyalty_points.toLocaleString() },
     ];
 

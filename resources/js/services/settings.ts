@@ -32,12 +32,12 @@ export const settingsService = {
     },
 
     getCompany: async () => {
-        const res = await api.get<ApiResponse<Company>>('/settings/company');
+        const res = await api.get<ApiResponse<Company>>('/company');
         return res.data;
     },
 
     updateCompany: async (data: Partial<Company>) => {
-        const res = await api.put<ApiResponse<Company>>('/settings/company', data);
+        const res = await api.put<ApiResponse<Company>>('/company', data);
         return res.data;
     },
 };

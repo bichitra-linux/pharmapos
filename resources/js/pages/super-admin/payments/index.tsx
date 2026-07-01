@@ -29,9 +29,9 @@ export default function SuperAdminPaymentsPage() {
     const paymentList = payments?.data ?? [];
 
     const statCards = [
-        { title: 'Total Revenue', value: formatCurrency(revenue?.total ?? 0), icon: DollarSign, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        { title: 'This Month', value: formatCurrency(revenue?.this_month ?? 0), icon: Calendar, color: 'text-success-600', bg: 'bg-success-50' },
-        { title: 'This Year', value: formatCurrency(revenue?.this_year ?? 0), icon: TrendingUp, color: 'text-warning-600', bg: 'bg-warning-50' },
+        { title: 'Total Revenue', value: formatCurrency(revenue?.total_revenue ?? 0), icon: DollarSign, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { title: 'This Month', value: formatCurrency(revenue?.current_month ?? 0), icon: Calendar, color: 'text-success-600', bg: 'bg-success-50' },
+        { title: 'Growth Rate', value: `${revenue?.growth_rate ?? 0}%`, icon: TrendingUp, color: 'text-warning-600', bg: 'bg-warning-50' },
     ];
 
     return (
@@ -46,7 +46,7 @@ export default function SuperAdminPaymentsPage() {
                                 <card.icon className={`h-6 w-6 ${card.color}`} />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">{card.title}</p>
+                                <p className="text-sm text-text-muted">{card.title}</p>
                                 <p className="text-2xl font-bold">{card.value}</p>
                             </div>
                         </CardContent>
@@ -88,10 +88,10 @@ export default function SuperAdminPaymentsPage() {
                                             </TableCell>
                                             <TableCell>{formatCurrency(payment.amount)}</TableCell>
                                             <TableCell className="capitalize">{payment.payment_method}</TableCell>
-                                            <TableCell className="text-sm text-gray-500">
+                                            <TableCell className="text-sm text-text-muted">
                                                 {payment.gateway ?? '—'}
                                             </TableCell>
-                                            <TableCell className="text-xs text-gray-500">
+                                            <TableCell className="text-xs text-text-muted">
                                                 {formatDate(payment.starts_at)} — {formatDate(payment.expires_at)}
                                             </TableCell>
                                             <TableCell>
@@ -99,7 +99,7 @@ export default function SuperAdminPaymentsPage() {
                                                 {payment.status === 'expired' && <Badge variant="secondary">Expired</Badge>}
                                                 {payment.status === 'cancelled' && <Badge variant="destructive">Cancelled</Badge>}
                                             </TableCell>
-                                            <TableCell className="text-sm text-gray-500">
+                                            <TableCell className="text-sm text-text-muted">
                                                 {formatDate(payment.created_at)}
                                             </TableCell>
                                         </TableRow>

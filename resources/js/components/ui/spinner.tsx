@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { CardSkeleton } from './skeleton';
 
 interface SpinnerProps {
     size?: 'sm' | 'md' | 'lg';
@@ -33,8 +34,10 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
 
 export function PageLoader() {
     return (
-        <div className="flex h-64 items-center justify-center">
-            <Spinner size="lg" />
+        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
         </div>
     );
 }

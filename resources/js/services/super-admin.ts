@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { ApiResponse } from '@/types';
 import { extractPaginatedData } from '@/lib/utils';
+import { useSuperAdminStore } from '@/stores/superAdminStore';
 import type {
     SuperAdmin,
     PlatformDashboard,
@@ -9,7 +10,9 @@ import type {
     SubscriptionPlan,
     SubscriptionPayment,
     PlatformSetting,
+    PaymentGateway,
     SystemHealth,
+    RevenueResponse,
 } from '@/types/super-admin';
 
 const superAdminApi = axios.create({
@@ -21,7 +24,7 @@ const superAdminApi = axios.create({
 });
 
 superAdminApi.interceptors.request.use((config) => {
-    const token = localStorage.getItem('super_admin_token');
+    const token = useSuperAdminStore.getState().token;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,10 +34,23 @@ superAdminApi.interceptors.request.use((config) => {
 superAdminApi.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('super_admin_token');
+        const status = error.response?.status;
+        const data = error.response?.data;
+
+        if (status === 401) {
+            useSuperAdminStore.getState().logout();
             window.location.href = '/super-admin/login';
         }
+
+        if (status === 422 && data?.errors) {
+            const fieldErrors = data.errors as Record<string, string[]>;
+            const messages = Object.entries(fieldErrors)
+                .map(([field, errs]) => `${field}: ${errs.join(', ')}`)
+                .join('\n');
+            error.validationErrors = fieldErrors;
+            error.message = messages || data.message || 'Validation failed';
+        }
+
         return Promise.reject(error);
     }
 );
@@ -96,12 +112,6 @@ interface TenantParams {
     per_page?: number;
 }
 
-interface RevenueResponse {
-    total: number;
-    this_month: number;
-    this_year: number;
-}
-
 export const superAdminService = {
     login: async (data: LoginData) => {
         const res = await superAdminApi.post<ApiResponse<LoginResponse>>('auth/login', data);
@@ -144,12 +154,12 @@ export const superAdminService = {
     },
 
     suspendTenant: async (id: number, reason: string) => {
-        const res = await superAdminApi.post<ApiResponse<TenantDetail>>(`tenants/${id}/suspend`, { reason });
+        const res = await superAdminApi.patch<ApiResponse<TenantDetail>>(`tenants/${id}/suspend`, { reason });
         return res.data;
     },
 
     activateTenant: async (id: number) => {
-        const res = await superAdminApi.post<ApiResponse<TenantDetail>>(`tenants/${id}/activate`);
+        const res = await superAdminApi.patch<ApiResponse<TenantDetail>>(`tenants/${id}/activate`);
         return res.data;
     },
 
@@ -184,13 +194,13 @@ export const superAdminService = {
     },
 
     togglePlan: async (id: number) => {
-        const res = await superAdminApi.post<ApiResponse<SubscriptionPlan>>(`plans/${id}/toggle`);
+        const res = await superAdminApi.patch<ApiResponse<SubscriptionPlan>>(`plans/${id}/toggle`);
         return res.data;
     },
 
     getSubscriptions: async () => {
         const res = await superAdminApi.get('subscriptions');
-        return extractPaginatedData<SubscriptionPayment>(res.data);
+        return extractPaginatedData<TenantSummary>(res.data);
     },
 
     extendSubscription: async (companyId: number, days: number) => {
@@ -214,12 +224,13 @@ export const superAdminService = {
     },
 
     getSettings: async () => {
-        const res = await superAdminApi.get<ApiResponse<PlatformSetting[]>>('settings');
+        const res = await superAdminApi.get<ApiResponse<Record<string, PlatformSetting[]>>>('settings');
         return res.data;
     },
 
     updateSettings: async (data: Record<string, string>) => {
-        const res = await superAdminApi.put<ApiResponse<PlatformSetting[]>>('settings', { settings: data });
+        const settings = Object.entries(data).map(([key, value]) => ({ key, value }));
+        const res = await superAdminApi.put<ApiResponse<PlatformSetting[]>>('settings', { settings });
         return res.data;
     },
 
@@ -230,6 +241,27 @@ export const superAdminService = {
 
     clearCache: async () => {
         const res = await superAdminApi.post<ApiResponse<null>>('system/clear-cache');
+        return res.data;
+    },
+
+    // Payment Gateways
+    getPaymentGateways: async () => {
+        const res = await superAdminApi.get<ApiResponse<PaymentGateway[]>>('payment-gateways');
+        return res.data;
+    },
+
+    updatePaymentGateway: async (id: number, data: Partial<PaymentGateway>) => {
+        const res = await superAdminApi.put<ApiResponse<PaymentGateway>>(`payment-gateways/${id}`, data);
+        return res.data;
+    },
+
+    togglePaymentGateway: async (id: number) => {
+        const res = await superAdminApi.patch<ApiResponse<PaymentGateway>>(`payment-gateways/${id}/toggle`);
+        return res.data;
+    },
+
+    testPaymentGateway: async (id: number) => {
+        const res = await superAdminApi.post<ApiResponse<{ message: string }>>(`payment-gateways/${id}/test`);
         return res.data;
     },
 };

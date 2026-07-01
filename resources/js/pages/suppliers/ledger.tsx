@@ -42,9 +42,9 @@ export default function SupplierLedger() {
                     <CardTitle>Supplier Info</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
-                    <div><span className="text-gray-500">Phone:</span> {supplier.phone}</div>
-                    <div><span className="text-gray-500">Email:</span> {supplier.email || '-'}</div>
-                    <div><span className="text-gray-500">Outstanding:</span> <span className="font-bold text-danger-600">{formatCurrency(supplier.outstanding_balance)}</span></div>
+                    <div><span className="text-text-muted">Phone:</span> {supplier.phone}</div>
+                    <div><span className="text-text-muted">Email:</span> {supplier.email || '-'}</div>
+                    <div><span className="text-text-muted">Outstanding:</span> <span className="font-bold text-danger-600">See ledger below</span></div>
                 </CardContent>
             </Card>
 
@@ -74,7 +74,7 @@ export default function SupplierLedger() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-gray-500">No payments recorded</TableCell>
+                                    <TableCell colSpan={5} className="text-center text-text-muted">No payments recorded</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

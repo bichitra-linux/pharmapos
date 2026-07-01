@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageLoader } from '@/components/ui/spinner';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Pill } from 'lucide-react';
 
 export default function ShowMedicine() {
     const { id } = useParams();
@@ -20,7 +20,17 @@ export default function ShowMedicine() {
     });
 
     if (isLoading) return <PageLoader />;
-    if (!medicine) return <div>Medicine not found</div>;
+    if (!medicine) return (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <Pill className="h-12 w-12 text-text-muted" />
+            <h2 className="text-lg font-semibold text-text">Medicine not found</h2>
+            <p className="text-sm text-text-muted">The medicine you're looking for doesn't exist or has been removed.</p>
+            <Button variant="outline" onClick={() => navigate('/medicines')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Medicines
+            </Button>
+        </div>
+    );
 
     return (
         <div className="space-y-6">
@@ -47,14 +57,14 @@ export default function ShowMedicine() {
                         <CardTitle>Basic Info</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div><span className="text-gray-500">Brand:</span> {medicine.brand_name}</div>
-                        <div><span className="text-gray-500">Generic:</span> {medicine.generic_name}</div>
-                        <div><span className="text-gray-500">Form:</span> {medicine.dosage_form}</div>
-                        <div><span className="text-gray-500">Strength:</span> {medicine.strength}</div>
-                        <div><span className="text-gray-500">Schedule:</span> {medicine.schedule_type}</div>
-                        {medicine.barcode && <div><span className="text-gray-500">Barcode:</span> {medicine.barcode}</div>}
-                        {medicine.manufacturer && <div><span className="text-gray-500">Manufacturer:</span> {medicine.manufacturer.name}</div>}
-                        {medicine.medicine_category && <div><span className="text-gray-500">Category:</span> {medicine.medicine_category.name}</div>}
+                        <div><span className="text-text-muted">Brand:</span> {medicine.brand_name}</div>
+                        <div><span className="text-text-muted">Generic:</span> {medicine.generic_name}</div>
+                        <div><span className="text-text-muted">Form:</span> {medicine.dosage_form}</div>
+                        <div><span className="text-text-muted">Strength:</span> {medicine.strength}</div>
+                        <div><span className="text-text-muted">Schedule:</span> {medicine.schedule_type}</div>
+                        {medicine.barcode && <div><span className="text-text-muted">Barcode:</span> {medicine.barcode}</div>}
+                        {medicine.manufacturer && <div><span className="text-text-muted">Manufacturer:</span> {medicine.manufacturer.name}</div>}
+                        {medicine.medicine_category && <div><span className="text-text-muted">Category:</span> {medicine.medicine_category.name}</div>}
                     </CardContent>
                 </Card>
 
@@ -65,12 +75,12 @@ export default function ShowMedicine() {
                     <CardContent className="space-y-2 text-sm">
                         {medicine.batches && medicine.batches.length > 0 ? (
                             <>
-                                <div><span className="text-gray-500">Purchase Price:</span> {formatCurrency(medicine.batches[0].purchase_price_per_unit)}</div>
-                                <div><span className="text-gray-500">Selling Price:</span> {formatCurrency(medicine.batches[0].selling_price_per_unit)}</div>
-                                <div><span className="text-gray-500">MRP:</span> {formatCurrency(medicine.batches[0].mrp_per_unit)}</div>
+                                <div><span className="text-text-muted">Purchase Price:</span> {formatCurrency(medicine.batches[0].purchase_price_per_unit)}</div>
+                                <div><span className="text-text-muted">Selling Price:</span> {formatCurrency(medicine.batches[0].selling_price_per_unit)}</div>
+                                <div><span className="text-text-muted">MRP:</span> {formatCurrency(medicine.batches[0].mrp_per_unit)}</div>
                             </>
                         ) : (
-                            <div className="text-gray-400">No batch pricing available</div>
+                            <div className="text-text-muted">No batch pricing available</div>
                         )}
                     </CardContent>
                 </Card>
@@ -80,11 +90,11 @@ export default function ShowMedicine() {
                         <CardTitle>Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div><span className="text-gray-500">Unit Type:</span> {medicine.unit_type}</div>
-                        <div><span className="text-gray-500">Units Per Pack:</span> {medicine.units_per_pack}</div>
-                        <div><span className="text-gray-500">Prescription Required:</span> {medicine.is_prescription_required ? 'Yes' : 'No'}</div>
-                        {medicine.storage_conditions && <div><span className="text-gray-500">Storage:</span> {medicine.storage_conditions}</div>}
-                        {medicine.description && <div><span className="text-gray-500">Description:</span> {medicine.description}</div>}
+                        <div><span className="text-text-muted">Unit Type:</span> {medicine.unit_type}</div>
+                        <div><span className="text-text-muted">Units Per Pack:</span> {medicine.units_per_pack}</div>
+                        <div><span className="text-text-muted">Prescription Required:</span> {medicine.is_prescription_required ? 'Yes' : 'No'}</div>
+                        {medicine.storage_conditions && <div><span className="text-text-muted">Storage:</span> {medicine.storage_conditions}</div>}
+                        {medicine.description && <div><span className="text-text-muted">Description:</span> {medicine.description}</div>}
                     </CardContent>
                 </Card>
             </div>

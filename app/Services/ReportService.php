@@ -21,7 +21,7 @@ class ReportService
     public function getSalesReport(int $companyId, ?int $outletId, string $from, string $to): array
     {
         $query = Sale::where('company_id', $companyId)
-            ->whereBetween('sale_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
+            ->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
 
         if ($outletId) {
             $query->where('outlet_id', $outletId);
@@ -39,9 +39,9 @@ class ReportService
             ->groupBy(fn ($p) => $p->paymentMethod?->name ?? 'Unknown')
             ->map(fn ($payments) => $payments->sum('amount'));
 
-        $dailySales = $sales->groupBy(fn (Sale $s) => $s->sale_date->format('Y-m-d'))
+        $dailySales = $sales->groupBy(fn (Sale $s) => $s->created_at->format('Y-m-d'))
             ->map(fn ($daySales) => [
-                'date' => $daySales->first()->sale_date->format('Y-m-d'),
+                'date' => $daySales->first()->created_at->format('Y-m-d'),
                 'total' => $daySales->sum('total_amount'),
                 'transactions' => $daySales->count(),
             ])
@@ -79,10 +79,10 @@ class ReportService
             'total_purchases' => round($purchases->sum('total_amount'), 2),
             'total_transactions' => $purchases->count(),
             'total_paid' => round($purchases->sum('paid_amount'), 2),
-            'total_due' => round($purchases->sum('total_amount') - $purchases->sum('paid_amount'), 2),
+            'total_due' => round($purchases->sum('total') - $purchases->sum('paid_amount'), 2),
             'by_supplier' => $purchases->groupBy('supplier_id')->map(fn ($group) => [
                 'supplier_id' => $group->first()->supplier_id,
-                'total' => round($group->sum('total_amount'), 2),
+                'total' => round($group->sum('total'), 2),
                 'count' => $group->count(),
             ])->values(),
         ];
@@ -162,7 +162,7 @@ class ReportService
                 'count' => $expired->count(),
                 'value' => round($expired->sum(fn (MedicineBatch $b) => (float) $b->quantity_in_stock * (float) $b->purchase_price_per_unit), 2),
                 'items' => $expired->map(fn (MedicineBatch $b) => [
-                    'medicine' => $b->medicine->name,
+                    'medicine' => $b->medicine->brand_name,
                     'batch_number' => $b->batch_number,
                     'expiry_date' => $b->expiry_date->format('Y-m-d'),
                     'stock' => $b->quantity_in_stock,
@@ -173,7 +173,7 @@ class ReportService
                 'count' => $expiringSoon->count(),
                 'value' => round($expiringSoon->sum(fn (MedicineBatch $b) => (float) $b->quantity_in_stock * (float) $b->purchase_price_per_unit), 2),
                 'items' => $expiringSoon->map(fn (MedicineBatch $b) => [
-                    'medicine' => $b->medicine->name,
+                    'medicine' => $b->medicine->brand_name,
                     'batch_number' => $b->batch_number,
                     'expiry_date' => $b->expiry_date->format('Y-m-d'),
                     'days_left' => $b->daysUntilExpiry(),
@@ -190,13 +190,13 @@ class ReportService
     public function getProfitLossReport(int $companyId, ?int $outletId, string $from, string $to): array
     {
         $salesQuery = Sale::where('company_id', $companyId)
-            ->whereBetween('sale_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
+            ->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
 
         $purchaseQuery = Purchase::where('company_id', $companyId)
             ->whereBetween('purchase_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
 
         $returnQuery = CustomerReturn::where('company_id', $companyId)
-            ->whereBetween('returned_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
+            ->whereBetween('return_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
 
         if ($outletId) {
             $salesQuery->where('outlet_id', $outletId);
@@ -205,14 +205,14 @@ class ReportService
         }
 
         $totalSales = $salesQuery->sum('total_amount');
-        $totalPurchases = $purchaseQuery->sum('total_amount');
+        $totalPurchases = $purchaseQuery->sum('total');
         $totalReturns = $returnQuery->sum('refund_amount');
         $totalVatCollected = $salesQuery->sum('vat_amount');
         $totalDiscountGiven = $salesQuery->sum('discount_amount');
 
         // Calculate COGS from sale items
         $saleIds = Sale::where('company_id', $companyId)
-            ->whereBetween('sale_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()])
+            ->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()])
             ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId))
             ->pluck('id');
 
@@ -246,14 +246,14 @@ class ReportService
     {
         $query = SaleItem::whereHas('sale', function ($q) use ($companyId, $outletId, $from, $to) {
             $q->where('company_id', $companyId)
-                ->whereBetween('sale_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
+                ->whereBetween('created_at', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
             if ($outletId) {
                 $q->where('outlet_id', $outletId);
             }
         });
 
-        $totalTaxable = $query->sum('taxable_amount');
-        $totalVat = $query->sum('vat_amount');
+        $totalTaxable = $query->sum(DB::raw('COALESCE(selling_price, 0) * COALESCE(quantity, 0)'));
+        $totalVat = $query->sum('vat');
 
         $purchaseQuery = Purchase::where('company_id', $companyId)
             ->whereBetween('purchase_date', [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]);
@@ -262,7 +262,7 @@ class ReportService
             $purchaseQuery->where('outlet_id', $outletId);
         }
 
-        $inputVat = $purchaseQuery->sum('vat_amount');
+        $inputVat = $purchaseQuery->sum('vat');
 
         return [
             'period' => ['from' => $from, 'to' => $to],
@@ -284,9 +284,9 @@ class ReportService
             ->groupBy('medicine_id')
             ->map(fn ($items) => [
                 'medicine_id' => $items->first()->medicine_id,
-                'medicine_name' => $items->first()->medicine_name,
+                'medicine_name' => $items->first()->medicine->brand_name ?? 'Unknown',
                 'quantity_sold' => $items->sum('quantity'),
-                'total_revenue' => $items->sum('total_amount'),
+                'total_revenue' => $items->sum('total'),
             ])
             ->sortByDesc('total_revenue')
             ->take($limit)

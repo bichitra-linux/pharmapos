@@ -1,69 +1,78 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useSuperAdminStore } from '@/stores/superAdminStore';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SuperAdminLayout } from '@/components/layout/super-admin-layout';
+import { PageLoader } from '@/components/ui/spinner';
 
-import LoginPage from '@/pages/login';
-import RegisterPage from '@/pages/register';
-import DashboardPage from '@/pages/dashboard';
-import POSPage from '@/pages/pos';
+const LoginPage = lazy(() => import('@/pages/login'));
+const RegisterPage = lazy(() => import('@/pages/register'));
+const DashboardPage = lazy(() => import('@/pages/dashboard'));
+const POSPage = lazy(() => import('@/pages/pos'));
 
-import MedicinesIndex from '@/pages/medicines/index';
-import CreateMedicine from '@/pages/medicines/create';
-import EditMedicine from '@/pages/medicines/edit';
-import ShowMedicine from '@/pages/medicines/show';
+const MedicinesIndex = lazy(() => import('@/pages/medicines/index'));
+const CreateMedicine = lazy(() => import('@/pages/medicines/create'));
+const EditMedicine = lazy(() => import('@/pages/medicines/edit'));
+const ShowMedicine = lazy(() => import('@/pages/medicines/show'));
+const ImportMedicine = lazy(() => import('@/pages/medicines/import'));
+const ManufacturersIndex = lazy(() => import('@/pages/medicines/manufacturers/index'));
 
-import InventoryIndex from '@/pages/inventory/index';
-import AdjustmentsPage from '@/pages/inventory/adjustments';
+const InventoryIndex = lazy(() => import('@/pages/inventory/index'));
+const AdjustmentsPage = lazy(() => import('@/pages/inventory/adjustments'));
 
-import PurchasesIndex from '@/pages/purchases/index';
-import CreatePurchase from '@/pages/purchases/create';
-import ShowPurchase from '@/pages/purchases/show';
+const PurchasesIndex = lazy(() => import('@/pages/purchases/index'));
+const CreatePurchase = lazy(() => import('@/pages/purchases/create'));
+const ShowPurchase = lazy(() => import('@/pages/purchases/show'));
 
-import SalesIndex from '@/pages/sales/index';
-import ShowSale from '@/pages/sales/show';
+const SalesIndex = lazy(() => import('@/pages/sales/index'));
+const ShowSale = lazy(() => import('@/pages/sales/show'));
 
-import CustomersIndex from '@/pages/customers/index';
-import CreateEditCustomer from '@/pages/customers/create';
+const CustomersIndex = lazy(() => import('@/pages/customers/index'));
+const CreateEditCustomer = lazy(() => import('@/pages/customers/create'));
 
-import SuppliersIndex from '@/pages/suppliers/index';
-import CreateEditSupplier from '@/pages/suppliers/create';
-import SupplierLedger from '@/pages/suppliers/ledger';
+const SuppliersIndex = lazy(() => import('@/pages/suppliers/index'));
+const CreateEditSupplier = lazy(() => import('@/pages/suppliers/create'));
+const SupplierLedger = lazy(() => import('@/pages/suppliers/ledger'));
 
-import PrescriptionsIndex from '@/pages/prescriptions/index';
-import CreatePrescription from '@/pages/prescriptions/create';
-import ShowPrescription from '@/pages/prescriptions/show';
+const PrescriptionsIndex = lazy(() => import('@/pages/prescriptions/index'));
+const CreatePrescription = lazy(() => import('@/pages/prescriptions/create'));
+const ShowPrescription = lazy(() => import('@/pages/prescriptions/show'));
 
-import ReturnsIndex from '@/pages/returns/index';
-import CreateReturn from '@/pages/returns/create';
+const ReturnsIndex = lazy(() => import('@/pages/returns/index'));
+const CreateReturn = lazy(() => import('@/pages/returns/create'));
 
-import ReportsIndex from '@/pages/reports/index';
-import SalesReport from '@/pages/reports/sales';
-import InventoryReport from '@/pages/reports/inventory';
-import ExpiryReport from '@/pages/reports/expiry';
-import ProfitLossReport from '@/pages/reports/profit-loss';
-import VatReport from '@/pages/reports/vat';
-import NarcoticsReport from '@/pages/reports/narcotics';
+const ReportsIndex = lazy(() => import('@/pages/reports/index'));
+const SalesReport = lazy(() => import('@/pages/reports/sales'));
+const InventoryReport = lazy(() => import('@/pages/reports/inventory'));
+const ExpiryReport = lazy(() => import('@/pages/reports/expiry'));
+const ProfitLossReport = lazy(() => import('@/pages/reports/profit-loss'));
+const VatReport = lazy(() => import('@/pages/reports/vat'));
+const NarcoticsReport = lazy(() => import('@/pages/reports/narcotics'));
 
-import NarcoticsRegisterIndex from '@/pages/narcotics-register/index';
-import SettingsPage from '@/pages/settings/index';
-import UsersIndex from '@/pages/users/index';
-import CreateEditUser from '@/pages/users/create';
+const NarcoticsRegisterIndex = lazy(() => import('@/pages/narcotics-register/index'));
+const SettingsPage = lazy(() => import('@/pages/settings/index'));
+const UsersIndex = lazy(() => import('@/pages/users/index'));
+const CreateEditUser = lazy(() => import('@/pages/users/create'));
 
-import SuperAdminLogin from '@/pages/super-admin/login';
-import SuperAdminDashboard from '@/pages/super-admin/dashboard';
-import SuperAdminTenants from '@/pages/super-admin/tenants/index';
-import SuperAdminTenantShow from '@/pages/super-admin/tenants/show';
-import SuperAdminPlans from '@/pages/super-admin/plans/index';
-import SuperAdminSubscriptions from '@/pages/super-admin/subscriptions/index';
-import SuperAdminPayments from '@/pages/super-admin/payments/index';
-import SuperAdminSettings from '@/pages/super-admin/settings/index';
-import SuperAdminSystem from '@/pages/super-admin/system/index';
+const SuperAdminLogin = lazy(() => import('@/pages/super-admin/login'));
+const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/dashboard'));
+const SuperAdminTenants = lazy(() => import('@/pages/super-admin/tenants/index'));
+const SuperAdminTenantShow = lazy(() => import('@/pages/super-admin/tenants/show'));
+const SuperAdminPlans = lazy(() => import('@/pages/super-admin/plans/index'));
+const SuperAdminSubscriptions = lazy(() => import('@/pages/super-admin/subscriptions/index'));
+const SuperAdminPayments = lazy(() => import('@/pages/super-admin/payments/index'));
+const SuperAdminSettings = lazy(() => import('@/pages/super-admin/settings/index'));
+const SuperAdminSystem = lazy(() => import('@/pages/super-admin/system/index'));
+
+function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+    return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-    if (!isAuthenticated) {
+    const token = useAuthStore((s) => s.token);
+    if (!isAuthenticated || !token) {
         return <Navigate to="/login" replace />;
     }
     return <>{children}</>;
@@ -98,7 +107,7 @@ export const router = createBrowserRouter([
         path: '/login',
         element: (
             <PublicRoute>
-                <LoginPage />
+                <SuspenseWrapper><LoginPage /></SuspenseWrapper>
             </PublicRoute>
         ),
     },
@@ -106,7 +115,7 @@ export const router = createBrowserRouter([
         path: '/register',
         element: (
             <PublicRoute>
-                <RegisterPage />
+                <SuspenseWrapper><RegisterPage /></SuspenseWrapper>
             </PublicRoute>
         ),
     },
@@ -114,7 +123,7 @@ export const router = createBrowserRouter([
         path: '/pos',
         element: (
             <ProtectedRoute>
-                <POSPage />
+                <SuspenseWrapper><POSPage /></SuspenseWrapper>
             </ProtectedRoute>
         ),
     },
@@ -127,49 +136,51 @@ export const router = createBrowserRouter([
         ),
         children: [
             { index: true, element: <Navigate to="/dashboard" replace /> },
-            { path: 'dashboard', element: <DashboardPage /> },
-            { path: 'medicines', element: <MedicinesIndex /> },
-            { path: 'medicines/create', element: <CreateMedicine /> },
-            { path: 'medicines/:id', element: <ShowMedicine /> },
-            { path: 'medicines/:id/edit', element: <EditMedicine /> },
-            { path: 'inventory', element: <InventoryIndex /> },
-            { path: 'inventory/adjustments', element: <AdjustmentsPage /> },
-            { path: 'purchases', element: <PurchasesIndex /> },
-            { path: 'purchases/create', element: <CreatePurchase /> },
-            { path: 'purchases/:id', element: <ShowPurchase /> },
-            { path: 'sales', element: <SalesIndex /> },
-            { path: 'sales/:id', element: <ShowSale /> },
-            { path: 'customers', element: <CustomersIndex /> },
-            { path: 'customers/create', element: <CreateEditCustomer /> },
-            { path: 'customers/:id/edit', element: <CreateEditCustomer /> },
-            { path: 'suppliers', element: <SuppliersIndex /> },
-            { path: 'suppliers/create', element: <CreateEditSupplier /> },
-            { path: 'suppliers/:id/edit', element: <CreateEditSupplier /> },
-            { path: 'suppliers/:id/ledger', element: <SupplierLedger /> },
-            { path: 'prescriptions', element: <PrescriptionsIndex /> },
-            { path: 'prescriptions/create', element: <CreatePrescription /> },
-            { path: 'prescriptions/:id', element: <ShowPrescription /> },
-            { path: 'returns', element: <ReturnsIndex /> },
-            { path: 'returns/create', element: <CreateReturn /> },
-            { path: 'reports', element: <ReportsIndex /> },
-            { path: 'reports/sales', element: <SalesReport /> },
-            { path: 'reports/inventory', element: <InventoryReport /> },
-            { path: 'reports/expiry', element: <ExpiryReport /> },
-            { path: 'reports/profit-loss', element: <ProfitLossReport /> },
-            { path: 'reports/vat', element: <VatReport /> },
-            { path: 'reports/narcotics', element: <NarcoticsReport /> },
-            { path: 'narcotics-register', element: <NarcoticsRegisterIndex /> },
-            { path: 'settings', element: <SettingsPage /> },
-            { path: 'users', element: <UsersIndex /> },
-            { path: 'users/create', element: <CreateEditUser /> },
-            { path: 'users/:id/edit', element: <CreateEditUser /> },
+            { path: 'dashboard', element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
+            { path: 'medicines', element: <SuspenseWrapper><MedicinesIndex /></SuspenseWrapper> },
+            { path: 'medicines/create', element: <SuspenseWrapper><CreateMedicine /></SuspenseWrapper> },
+            { path: 'medicines/import', element: <SuspenseWrapper><ImportMedicine /></SuspenseWrapper> },
+            { path: 'medicines/:id', element: <SuspenseWrapper><ShowMedicine /></SuspenseWrapper> },
+            { path: 'medicines/:id/edit', element: <SuspenseWrapper><EditMedicine /></SuspenseWrapper> },
+            { path: 'medicines/manufacturers', element: <SuspenseWrapper><ManufacturersIndex /></SuspenseWrapper> },
+            { path: 'inventory', element: <SuspenseWrapper><InventoryIndex /></SuspenseWrapper> },
+            { path: 'inventory/adjustments', element: <SuspenseWrapper><AdjustmentsPage /></SuspenseWrapper> },
+            { path: 'purchases', element: <SuspenseWrapper><PurchasesIndex /></SuspenseWrapper> },
+            { path: 'purchases/create', element: <SuspenseWrapper><CreatePurchase /></SuspenseWrapper> },
+            { path: 'purchases/:id', element: <SuspenseWrapper><ShowPurchase /></SuspenseWrapper> },
+            { path: 'sales', element: <SuspenseWrapper><SalesIndex /></SuspenseWrapper> },
+            { path: 'sales/:id', element: <SuspenseWrapper><ShowSale /></SuspenseWrapper> },
+            { path: 'customers', element: <SuspenseWrapper><CustomersIndex /></SuspenseWrapper> },
+            { path: 'customers/create', element: <SuspenseWrapper><CreateEditCustomer /></SuspenseWrapper> },
+            { path: 'customers/:id/edit', element: <SuspenseWrapper><CreateEditCustomer /></SuspenseWrapper> },
+            { path: 'suppliers', element: <SuspenseWrapper><SuppliersIndex /></SuspenseWrapper> },
+            { path: 'suppliers/create', element: <SuspenseWrapper><CreateEditSupplier /></SuspenseWrapper> },
+            { path: 'suppliers/:id/edit', element: <SuspenseWrapper><CreateEditSupplier /></SuspenseWrapper> },
+            { path: 'suppliers/:id/ledger', element: <SuspenseWrapper><SupplierLedger /></SuspenseWrapper> },
+            { path: 'prescriptions', element: <SuspenseWrapper><PrescriptionsIndex /></SuspenseWrapper> },
+            { path: 'prescriptions/create', element: <SuspenseWrapper><CreatePrescription /></SuspenseWrapper> },
+            { path: 'prescriptions/:id', element: <SuspenseWrapper><ShowPrescription /></SuspenseWrapper> },
+            { path: 'returns', element: <SuspenseWrapper><ReturnsIndex /></SuspenseWrapper> },
+            { path: 'returns/create', element: <SuspenseWrapper><CreateReturn /></SuspenseWrapper> },
+            { path: 'reports', element: <SuspenseWrapper><ReportsIndex /></SuspenseWrapper> },
+            { path: 'reports/sales', element: <SuspenseWrapper><SalesReport /></SuspenseWrapper> },
+            { path: 'reports/inventory', element: <SuspenseWrapper><InventoryReport /></SuspenseWrapper> },
+            { path: 'reports/expiry', element: <SuspenseWrapper><ExpiryReport /></SuspenseWrapper> },
+            { path: 'reports/profit-loss', element: <SuspenseWrapper><ProfitLossReport /></SuspenseWrapper> },
+            { path: 'reports/vat', element: <SuspenseWrapper><VatReport /></SuspenseWrapper> },
+            { path: 'reports/narcotics', element: <SuspenseWrapper><NarcoticsReport /></SuspenseWrapper> },
+            { path: 'narcotics-register', element: <SuspenseWrapper><NarcoticsRegisterIndex /></SuspenseWrapper> },
+            { path: 'settings', element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper> },
+            { path: 'users', element: <SuspenseWrapper><UsersIndex /></SuspenseWrapper> },
+            { path: 'users/create', element: <SuspenseWrapper><CreateEditUser /></SuspenseWrapper> },
+            { path: 'users/:id/edit', element: <SuspenseWrapper><CreateEditUser /></SuspenseWrapper> },
         ],
     },
     {
         path: '/super-admin/login',
         element: (
             <SuperAdminPublicRoute>
-                <SuperAdminLogin />
+                <SuspenseWrapper><SuperAdminLogin /></SuspenseWrapper>
             </SuperAdminPublicRoute>
         ),
     },
@@ -182,14 +193,14 @@ export const router = createBrowserRouter([
         ),
         children: [
             { index: true, element: <Navigate to="/super-admin/dashboard" replace /> },
-            { path: 'dashboard', element: <SuperAdminDashboard /> },
-            { path: 'tenants', element: <SuperAdminTenants /> },
-            { path: 'tenants/:id', element: <SuperAdminTenantShow /> },
-            { path: 'plans', element: <SuperAdminPlans /> },
-            { path: 'subscriptions', element: <SuperAdminSubscriptions /> },
-            { path: 'payments', element: <SuperAdminPayments /> },
-            { path: 'settings', element: <SuperAdminSettings /> },
-            { path: 'system', element: <SuperAdminSystem /> },
+            { path: 'dashboard', element: <SuspenseWrapper><SuperAdminDashboard /></SuspenseWrapper> },
+            { path: 'tenants', element: <SuspenseWrapper><SuperAdminTenants /></SuspenseWrapper> },
+            { path: 'tenants/:id', element: <SuspenseWrapper><SuperAdminTenantShow /></SuspenseWrapper> },
+            { path: 'plans', element: <SuspenseWrapper><SuperAdminPlans /></SuspenseWrapper> },
+            { path: 'subscriptions', element: <SuspenseWrapper><SuperAdminSubscriptions /></SuspenseWrapper> },
+            { path: 'payments', element: <SuspenseWrapper><SuperAdminPayments /></SuspenseWrapper> },
+            { path: 'settings', element: <SuspenseWrapper><SuperAdminSettings /></SuspenseWrapper> },
+            { path: 'system', element: <SuspenseWrapper><SuperAdminSystem /></SuspenseWrapper> },
             { path: '*', element: <Navigate to="/super-admin/dashboard" replace /> },
         ],
     },

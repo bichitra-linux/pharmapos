@@ -5,10 +5,12 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
+import { useToast } from '@/components/ui/toast';
 import { Plus } from 'lucide-react';
 import type { InventoryAdjustment } from '@/types';
 
 export default function AdjustmentsPage() {
+    const { addToast } = useToast();
     const [page, setPage] = useState(1);
 
     const { data, isLoading } = useQuery({
@@ -36,7 +38,7 @@ export default function AdjustmentsPage() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Stock Adjustments</h1>
-                <Button>
+                <Button onClick={() => addToast({ type: 'info', title: 'New adjustment coming soon' })}>
                     <Plus className="mr-2 h-4 w-4" />
                     New Adjustment
                 </Button>

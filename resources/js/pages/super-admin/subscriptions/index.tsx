@@ -43,10 +43,11 @@ export default function SuperAdminSubscriptionsPage() {
         },
     });
 
-    const getStatusBadge = (expiresAt: string, status: string) => {
-        if (status === 'cancelled') return <Badge variant="destructive">Cancelled</Badge>;
-        if (status === 'expired') return <Badge variant="secondary">Expired</Badge>;
-        const daysLeft = differenceInDays(parseISO(expiresAt), new Date());
+    const getStatusBadge = (sub: { suspended_at: string | null; is_active: boolean; subscription_expires_at: string | null }) => {
+        if (sub.suspended_at) return <Badge variant="destructive">Suspended</Badge>;
+        if (!sub.is_active) return <Badge variant="secondary">Inactive</Badge>;
+        if (!sub.subscription_expires_at) return <Badge variant="secondary">No Plan</Badge>;
+        const daysLeft = differenceInDays(parseISO(sub.subscription_expires_at), new Date());
         if (daysLeft < 0) return <Badge variant="destructive">Expired</Badge>;
         if (daysLeft <= 7) return <Badge variant="warning">Expiring Soon</Badge>;
         return <Badge variant="success">Active</Badge>;
@@ -83,36 +84,36 @@ export default function SuperAdminSubscriptionsPage() {
                                     {subscriptions.map((sub) => (
                                         <TableRow key={sub.id}>
                                             <TableCell className="font-medium">
-                                                {sub.company?.name ?? `Company #${sub.company_id}`}
+                                                {sub.name}
                                             </TableCell>
                                             <TableCell>
-                                                {sub.plan?.name ?? `Plan #${sub.plan_id}`}
+                                                {sub.subscriptionPlan?.name ?? (sub.subscription_plan_id ? `Plan #${sub.subscription_plan_id}` : 'None')}
                                             </TableCell>
-                                            <TableCell>{formatCurrency(sub.amount)}</TableCell>
-                                            <TableCell className="text-sm text-gray-500">
-                                                {formatDate(sub.starts_at)}
+                                            <TableCell>{sub.subscriptionPlan ? formatCurrency(sub.subscriptionPlan.price_monthly) : '—'}</TableCell>
+                                            <TableCell className="text-sm text-text-muted">
+                                                {formatDate(sub.created_at)}
                                             </TableCell>
-                                            <TableCell className="text-sm text-gray-500">
-                                                {formatDate(sub.expires_at)}
+                                            <TableCell className="text-sm text-text-muted">
+                                                {sub.subscription_expires_at ? formatDate(sub.subscription_expires_at) : '—'}
                                             </TableCell>
                                             <TableCell>
-                                                {getStatusBadge(sub.expires_at, sub.status)}
+                                                {getStatusBadge(sub)}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-1">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => setExtendId(sub.company_id)}
+                                                        onClick={() => setExtendId(sub.id)}
                                                         title="Extend"
                                                     >
                                                         <Plus className="mr-1 h-3 w-3" /> Extend
                                                     </Button>
-                                                    {sub.status === 'active' && (
+                                                    {!sub.suspended_at && sub.is_active && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => setCancelId(sub.company_id)}
+                                                            onClick={() => setCancelId(sub.id)}
                                                             title="Cancel"
                                                         >
                                                             <XCircle className="h-3 w-3 text-danger-500" />
@@ -176,7 +177,7 @@ export default function SuperAdminSubscriptionsPage() {
                     <DialogTitle>Cancel Subscription</DialogTitle>
                 </DialogHeader>
                 <DialogContent>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-text-muted">
                         Are you sure you want to cancel this subscription? The tenant will lose access to premium features.
                     </p>
                 </DialogContent>

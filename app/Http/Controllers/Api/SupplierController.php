@@ -22,7 +22,7 @@ final class SupplierController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('company_name', 'like', "%{$search}%");
+                    ->orWhere('contact_person', 'like', "%{$search}%");
             });
         }
 
@@ -40,13 +40,13 @@ final class SupplierController extends Controller
         $supplier = Supplier::create([
             'company_id' => $request->user()->company_id,
             'name' => $request->name,
-            'company_name' => $request->company_name,
+            'contact_person' => $request->contact_person,
             'phone' => $request->phone,
             'email' => $request->email,
             'address' => $request->address,
             'pan_number' => $request->pan_number,
-            'bank_details' => $request->bank_details,
-            'credit_days' => $request->credit_days ?? 30,
+            'drug_license_number' => $request->drug_license_number,
+            'payment_terms' => $request->payment_terms ?? 30,
             'is_active' => true,
         ]);
 

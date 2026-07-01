@@ -6,6 +6,8 @@ interface CreatePurchaseData {
     supplier_id: number;
     purchase_date: string;
     grn_number?: string;
+    due_date?: string;
+    supplier_invoice_number?: string;
     items: {
         medicine_id: number;
         batch_number: string;
@@ -41,8 +43,5 @@ export const purchasesService = {
         return res.data;
     },
 
-    cancel: async (id: number) => {
-        const res = await api.post<ApiResponse<Purchase>>(`/purchases/${id}/cancel`);
-        return res.data;
-    },
+
 };

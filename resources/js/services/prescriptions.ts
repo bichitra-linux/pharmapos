@@ -25,8 +25,5 @@ export const prescriptionsService = {
         return res.data;
     },
 
-    cancel: async (id: number) => {
-        const res = await api.post<ApiResponse<Prescription>>(`/prescriptions/${id}/cancel`);
-        return res.data;
-    },
+
 };

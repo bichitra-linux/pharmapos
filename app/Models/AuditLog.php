@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,8 +19,8 @@ class AuditLog extends Model
         'company_id',
         'user_id',
         'action',
-        'auditable_type',
-        'auditable_id',
+        'model_type',
+        'model_id',
         'old_values',
         'new_values',
         'ip_address',
@@ -34,6 +35,11 @@ class AuditLog extends Model
             'new_values' => 'array',
             'created_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope);
     }
 
     public function company(): BelongsTo

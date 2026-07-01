@@ -9,6 +9,9 @@ class SaltCompositionSeeder extends Seeder
 {
     public function run(): void
     {
+        $company = DB::table('companies')->first();
+        if (!$company) return;
+
         $salts = [
             ['name' => 'Paracetamol', 'description' => 'Analgesic and antipyretic', 'is_active' => true],
             ['name' => 'Amoxicillin', 'description' => 'Penicillin antibiotic', 'is_active' => true],
@@ -64,6 +67,7 @@ class SaltCompositionSeeder extends Seeder
 
         $now = now();
         foreach ($salts as &$salt) {
+            $salt['company_id'] = $company->id;
             $salt['created_at'] = $now;
             $salt['updated_at'] = $now;
         }

@@ -70,13 +70,14 @@ export default function CreatePrescription() {
                         <Input label="Diagnosis" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} />
                         <Input label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-700">Upload Image</label>
+                            <label htmlFor="prescription-file" className="mb-1.5 block text-sm font-medium text-text">Upload Image</label>
                             <div className="flex items-center gap-3">
                                 <input
+                                    id="prescription-file"
                                     type="file"
                                     accept="image/*,.pdf"
                                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                    className="text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100"
+                                    className="text-sm text-text-muted file:mr-4 file:rounded-md file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100"
                                 />
                             </div>
                         </div>

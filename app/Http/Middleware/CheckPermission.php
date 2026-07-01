@@ -18,19 +18,19 @@ final class CheckPermission
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if ($user->hasRole('super_admin')) {
+        if ($user->role === 'owner') {
             return $next($request);
         }
 
         foreach ($permissions as $permission) {
-            if ($user->hasPermissionTo($permission)) {
-                return $next($request);
+            if (! $user->hasPermission($permission)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden.',
+                ], 403);
             }
         }
 
-        return response()->json([
-            'message' => 'You do not have the required permission.',
-            'required' => $permissions,
-        ], 403);
+        return $next($request);
     }
 }

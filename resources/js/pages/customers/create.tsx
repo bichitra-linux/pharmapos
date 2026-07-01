@@ -30,7 +30,7 @@ export default function CreateEditCustomer() {
         email: '',
         address: '',
         date_of_birth: '',
-        gender: '',
+        gender: null as string | null,
         blood_group: '',
         allergies: '',
         credit_limit: 0,
@@ -44,7 +44,7 @@ export default function CreateEditCustomer() {
                 email: customer.email || '',
                 address: customer.address || '',
                 date_of_birth: customer.date_of_birth || '',
-                gender: customer.gender || '',
+                gender: customer.gender ?? null,
                 blood_group: customer.blood_group || '',
                 allergies: customer.allergies || '',
                 credit_limit: customer.credit_limit,
@@ -52,7 +52,7 @@ export default function CreateEditCustomer() {
         }
     }, [customer]);
 
-    const updateField = (field: string, value: string | number) => {
+    const updateField = (field: keyof typeof form, value: string | number | null) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -72,7 +72,8 @@ export default function CreateEditCustomer() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        mutation.mutate(form);
+        const submitData = { ...form, gender: form.gender || null };
+        mutation.mutate(submitData);
     };
 
     return (
@@ -107,7 +108,7 @@ export default function CreateEditCustomer() {
                                     { label: 'Female', value: 'female' },
                                     { label: 'Other', value: 'other' },
                                 ]}
-                                value={form.gender}
+                                value={form.gender ?? ''}
                                 onChange={(v) => updateField('gender', v)}
                             />
                             <Select

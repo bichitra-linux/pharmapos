@@ -19,7 +19,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="mb-1.5 block text-sm font-medium text-gray-700"
+                        className="mb-1.5 block text-sm font-medium text-text"
                     >
                         {label}
                     </label>
@@ -30,7 +30,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     aria-invalid={error ? true : undefined}
                     aria-describedby={error ? errorId : hint ? hintId : undefined}
                     className={cn(
-                        'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                        'flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                         error && 'border-danger-500 focus-visible:ring-danger-500',
                         className
                     )}
@@ -38,7 +38,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     {...props}
                 />
                 {hint && !error && (
-                    <p id={hintId} className="mt-1 text-xs text-gray-500">{hint}</p>
+                    <p id={hintId} className="mt-1 text-xs text-text-muted">{hint}</p>
                 )}
                 {error && <p id={errorId} className="mt-1 text-xs text-danger-600" role="alert">{error}</p>}
             </div>

@@ -16,7 +16,7 @@ final class PrescriptionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Prescription::where('company_id', $request->user()->company_id)
-            ->with(['customer:id,name,phone', 'doctor', 'user:id,name']);
+            ->with(['customer:id,name,phone']);
 
         if ($request->filled('customer_id')) {
             $query->where('customer_id', $request->customer_id);
@@ -53,50 +53,60 @@ final class PrescriptionController extends Controller
 
     public function store(StorePrescriptionRequest $request): JsonResponse
     {
-        $companyId = $request->user()->company_id;
-        $dateStr = now()->format('Ymd');
-        $count = Prescription::where('company_id', $companyId)->whereDate('created_at', today())->count();
-        $prescriptionNumber = "RX-{$companyId}-{$dateStr}-".str_pad((string) ($count + 1), 4, '0', STR_PAD_LEFT);
+        return DB::transaction(function () use ($request) {
+            $companyId = $request->user()->company_id;
+            $dateStr = now()->format('Ymd');
+            $prefix = "RX-{$companyId}-{$dateStr}-";
 
-        $prescription = Prescription::create([
-            'company_id' => $companyId,
-            'outlet_id' => $request->user()->outlet_id,
-            'customer_id' => $request->customer_id,
-            'doctor_id' => $request->doctor_id,
-            'user_id' => $request->user()->id,
-            'prescription_number' => $prescriptionNumber,
-            'prescription_date' => $request->prescription_date ?? now(),
-            'diagnosis' => $request->diagnosis,
-            'notes' => $request->notes,
-            'image_path' => $request->hasFile('image') ? $request->file('image')->store('prescriptions', 'public') : null,
-            'status' => 'pending',
-        ]);
+            $lastPrescription = Prescription::where('company_id', $companyId)
+                ->where('prescription_number', 'like', $prefix.'%')
+                ->lockForUpdate()
+                ->max('prescription_number');
 
-        if ($request->filled('items')) {
-            foreach ($request->items as $item) {
-                DB::table('prescription_items')->insert([
-                    'prescription_id' => $prescription->id,
-                    'medicine_id' => $item['medicine_id'] ?? null,
-                    'medicine_name' => $item['medicine_name'] ?? null,
-                    'dosage' => $item['dosage'] ?? null,
-                    'frequency' => $item['frequency'] ?? null,
-                    'duration' => $item['duration'] ?? null,
-                    'quantity' => $item['quantity'] ?? null,
-                    'notes' => $item['notes'] ?? null,
-                    'is_dispensed' => false,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+            $sequence = 1;
+            if ($lastPrescription) {
+                $lastSequence = (int) substr($lastPrescription, -4);
+                $sequence = $lastSequence >= 9999 ? 1 : $lastSequence + 1;
             }
-        }
+            $prescriptionNumber = $prefix.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
 
-        $prescription->load(['customer', 'items']);
+            $prescription = Prescription::create([
+                'company_id' => $companyId,
+                'customer_id' => $request->customer_id,
+                'prescription_number' => $prescriptionNumber,
+                'doctor_name' => $request->doctor_name,
+                'prescription_date' => $request->prescription_date ?? now(),
+                'notes' => $request->notes,
+                'image_path' => $request->hasFile('image') ? $request->file('image')->store('prescriptions', 'public') : null,
+                'status' => 'pending',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Prescription created successfully.',
-            'data' => $prescription,
-        ], 201);
+            if ($request->filled('items')) {
+                foreach ($request->items as $item) {
+                    DB::table('prescription_items')->insert([
+                        'prescription_id' => $prescription->id,
+                        'medicine_id' => $item['medicine_id'] ?? null,
+                        'medicine_name' => $item['medicine_name'] ?? '',
+                        'dosage' => $item['dosage'] ?? null,
+                        'frequency' => $item['frequency'] ?? null,
+                        'duration' => $item['duration'] ?? null,
+                        'quantity_prescribed' => $item['quantity'] ?? null,
+                        'quantity_dispensed' => 0,
+                        'notes' => $item['notes'] ?? null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+
+            $prescription->load(['customer', 'items']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Prescription created successfully.',
+                'data' => $prescription,
+            ], 201);
+        });
     }
 
     public function show(Request $request, Prescription $prescription): JsonResponse
@@ -105,7 +115,7 @@ final class PrescriptionController extends Controller
             return response()->json(['success' => false, 'message' => 'Not found.'], 404);
         }
 
-        $prescription->load(['customer', 'doctor', 'items.medicine', 'user:id,name', 'sales']);
+        $prescription->load(['customer', 'items.medicine']);
 
         return response()->json([
             'success' => true,
@@ -120,7 +130,7 @@ final class PrescriptionController extends Controller
         }
 
         $prescription->update($request->only([
-            'customer_id', 'doctor_id', 'prescription_date', 'diagnosis', 'notes',
+            'customer_id', 'doctor_name', 'prescription_date', 'notes',
         ]));
 
         if ($request->hasFile('image')) {
@@ -155,7 +165,6 @@ final class PrescriptionController extends Controller
                 ->where('id', $item['prescription_item_id'])
                 ->where('prescription_id', $prescription->id)
                 ->update([
-                    'is_dispensed' => true,
                     'quantity_dispensed' => $item['quantity_dispensed'],
                     'updated_at' => now(),
                 ]);
@@ -163,17 +172,13 @@ final class PrescriptionController extends Controller
 
         $allDispensed = DB::table('prescription_items')
             ->where('prescription_id', $prescription->id)
-            ->where('is_dispensed', false)
+            ->where('quantity_dispensed', '<', DB::raw('quantity_prescribed'))
             ->doesntExist();
 
         if ($allDispensed) {
             $prescription->update(['status' => 'dispensed']);
         } else {
             $prescription->update(['status' => 'partial']);
-        }
-
-        if ($request->filled('sale_id')) {
-            $prescription->update(['sale_id' => $request->sale_id]);
         }
 
         return response()->json([

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Medicine;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -102,6 +103,9 @@ final class DashboardController extends Controller
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
 
+        $company = Company::find($companyId);
+        $lowStockThreshold = (int) ($company->settings['low_stock_threshold'] ?? 10);
+
         $medicines = Medicine::where('medicines.company_id', $companyId)
             ->where('medicines.is_active', true)
             ->select(
@@ -117,7 +121,7 @@ final class DashboardController extends Controller
             })
             ->groupBy('medicines.id', 'medicines.brand_name', 'medicines.generic_name', 'medicines.hsn_code')
             ->having('current_stock', '>', 0)
-            ->having('current_stock', '<=', 10)
+            ->having('current_stock', '<=', $lowStockThreshold)
             ->orderBy('current_stock')
             ->limit(50)
             ->get();

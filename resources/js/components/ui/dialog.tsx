@@ -81,7 +81,7 @@ export function Dialog({ open, onClose, children, size = 'md' }: DialogProps) {
             <div
                 ref={dialogRef}
                 className={cn(
-                    'relative z-50 w-full rounded-lg bg-white p-6 shadow-xl',
+                    'relative z-50 w-full rounded-lg bg-surface p-6 shadow-xl',
                     sizeClasses[size]
                 )}
             >
@@ -100,7 +100,7 @@ export function DialogTitle({ children, className }: { children: React.ReactNode
 }
 
 export function DialogDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-    return <p className={cn('text-sm text-gray-500', className)}>{children}</p>;
+    return <p className={cn('text-sm text-text-muted', className)}>{children}</p>;
 }
 
 export function DialogContent({ children, className }: { children: React.ReactNode; className?: string }) {

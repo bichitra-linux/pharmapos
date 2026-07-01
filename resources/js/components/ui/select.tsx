@@ -33,7 +33,7 @@ export function Select({
     return (
         <div className="w-full">
             {label && (
-                <label htmlFor={selectId} className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label htmlFor={selectId} className="mb-1.5 block text-sm font-medium text-text">
                     {label}
                 </label>
             )}
@@ -42,13 +42,17 @@ export function Select({
                 value={value ?? ''}
                 onChange={(e) => {
                     const val = e.target.value;
-                    onChange(isNaN(Number(val)) ? val : Number(val));
+                    if (val === '') {
+                        onChange('');
+                    } else {
+                        onChange(isNaN(Number(val)) ? val : Number(val));
+                    }
                 }}
                 disabled={disabled}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? errorId : undefined}
                 className={cn(
-                    'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                    'flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                     error && 'border-danger-500 focus-visible:ring-danger-500',
                     className
                 )}

@@ -33,7 +33,6 @@ class SubscriptionPlan extends Model
             'max_medicines' => 'integer',
             'features' => 'array',
             'is_active' => 'boolean',
-            'sort_order' => 'integer',
         ];
     }
 

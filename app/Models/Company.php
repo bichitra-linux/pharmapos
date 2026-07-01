@@ -30,9 +30,12 @@ class Company extends Model
         'subscription_plan_id',
         'subscription_expires_at',
         'settings',
+        'country',
+        'state',
+        'local_level',
+        'registration_number',
+        'google_maps_link',
         'is_active',
-        'suspended_at',
-        'suspension_reason',
     ];
 
     protected function casts(): array

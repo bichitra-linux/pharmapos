@@ -13,7 +13,9 @@ final class SaltCompositionController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = SaltComposition::withCount('medicines')->orderBy('name');
+        $query = SaltComposition::where('company_id', $request->user()->company_id)
+            ->withCount('medicines')
+            ->orderBy('name');
 
         if ($request->filled('search')) {
             $query->where('name', 'like', "%{$request->search}%");
@@ -30,11 +32,12 @@ final class SaltCompositionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:salt_compositions,name',
+            'name' => 'required|string|max:255|unique:salt_compositions,name,NULL,id,company_id,'.$request->user()->company_id,
             'description' => 'nullable|string',
         ]);
 
         $salt = SaltComposition::create([
+            'company_id' => $request->user()->company_id,
             'name' => $request->name,
             'description' => $request->description,
             'is_active' => true,
@@ -47,8 +50,12 @@ final class SaltCompositionController extends Controller
         ], 201);
     }
 
-    public function show(SaltComposition $saltComposition): JsonResponse
+    public function show(Request $request, SaltComposition $saltComposition): JsonResponse
     {
+        if ($saltComposition->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
         $saltComposition->load('medicines');
 
         return response()->json([
@@ -59,8 +66,12 @@ final class SaltCompositionController extends Controller
 
     public function update(Request $request, SaltComposition $saltComposition): JsonResponse
     {
+        if ($saltComposition->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
         $request->validate([
-            'name' => 'sometimes|string|max:255|unique:salt_compositions,name,'.$saltComposition->id,
+            'name' => 'sometimes|string|max:255|unique:salt_compositions,name,'.$saltComposition->id.',id,company_id,'.$request->user()->company_id,
             'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -74,8 +85,11 @@ final class SaltCompositionController extends Controller
         ]);
     }
 
-    public function destroy(SaltComposition $saltComposition): JsonResponse
+    public function destroy(Request $request, SaltComposition $saltComposition): JsonResponse
     {
+        if ($saltComposition->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
         if ($saltComposition->medicines()->exists()) {
             return response()->json([
                 'success' => false,

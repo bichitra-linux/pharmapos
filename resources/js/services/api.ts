@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '@/lib/constants';
+import { useAuthStore } from '@/stores/authStore';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -32,16 +33,13 @@ api.interceptors.response.use(
         const data = error.response?.data;
 
         if (status === 401) {
-            localStorage.removeItem('auth-storage');
-            localStorage.removeItem('super_admin_token');
+            useAuthStore.getState().logout();
             window.location.href = '/login';
         }
 
         if (status === 403 && data?.suspension_reason) {
             localStorage.removeItem('auth-storage');
-            localStorage.removeItem('super_admin_token');
-            alert(`Account suspended: ${data.suspension_reason}`);
-            window.location.href = '/login';
+            window.location.href = `/login?suspended=${encodeURIComponent(data.suspension_reason)}`;
         }
 
         if (status === 422 && data?.errors) {

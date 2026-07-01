@@ -34,9 +34,7 @@ export const customersService = {
     },
 
     search: async (query: string) => {
-        const res = await api.get<ApiResponse<Customer[]>>('/customers/search', {
-            params: { q: query },
-        });
-        return res.data;
+        const res = await api.get('/customers', { params: { search: query, per_page: 10 } });
+        return extractPaginatedData<Customer>(res.data);
     },
 };

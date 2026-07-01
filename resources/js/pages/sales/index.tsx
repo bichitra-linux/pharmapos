@@ -15,6 +15,7 @@ export default function SalesIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['sales', search, page],
         queryFn: () => salesService.list({ search, page, per_page: 15 }),
+        staleTime: 30_000,
     });
 
     const columns: Column<Sale>[] = [
@@ -25,21 +26,26 @@ export default function SalesIndex() {
         { key: 'paid_amount', header: 'Paid', render: (item) => formatCurrency(item.paid_amount) },
         {
             key: 'payment_status',
-            header: 'Payment',
-            render: (item) => (
-                <Badge variant={item.payment_status === 'paid' ? 'success' : item.payment_status === 'partial' ? 'warning' : 'destructive'}>
-                    {item.payment_status}
-                </Badge>
-            ),
-        },
-        {
-            key: 'status',
             header: 'Status',
-            render: (item) => (
-                <Badge variant={item.status === 'completed' ? 'success' : item.status === 'cancelled' ? 'destructive' : 'default'}>
-                    {item.status}
-                </Badge>
-            ),
+            render: (item) => {
+                const variants: Record<string, 'success' | 'warning' | 'destructive' | 'secondary'> = {
+                    paid: 'success',
+                    partial: 'warning',
+                    due: 'destructive',
+                    refunded: 'secondary',
+                };
+                const labels: Record<string, string> = {
+                    paid: 'Paid',
+                    partial: 'Partial',
+                    due: 'Due',
+                    refunded: 'Refunded',
+                };
+                return (
+                    <Badge variant={variants[item.payment_status] || 'secondary'}>
+                        {labels[item.payment_status] || item.payment_status}
+                    </Badge>
+                );
+            },
         },
     ];
 

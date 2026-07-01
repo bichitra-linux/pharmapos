@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -15,7 +16,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSuperAdminStore } from '@/stores/superAdminStore';
-import { useUIStore } from '@/stores/uiStore';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { superAdminService } from '@/services/super-admin';
 
@@ -30,8 +30,8 @@ const navItems = [
 ];
 
 export function SuperAdminLayout() {
-    const sidebarOpen = useUIStore((s) => s.sidebarOpen);
-    const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const toggleSidebar = () => setSidebarOpen((prev) => !prev);
     const user = useSuperAdminStore((s) => s.user);
     const logoutStore = useSuperAdminStore((s) => s.logout);
     const navigate = useNavigate();
@@ -43,28 +43,28 @@ export function SuperAdminLayout() {
             // ignore error, still logout locally
         }
         logoutStore();
-        navigate('/super-admin/login');
+        navigate('/super-admin/login', { replace: true });
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-surface-muted">
             <aside
                 className={cn(
-                    'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-indigo-900/30 bg-gradient-to-b from-indigo-950 to-gray-950 transition-all duration-300',
+                    'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-primary-900/30 bg-gradient-to-b from-primary-950 to-primary-950/90 transition-all duration-300',
                     sidebarOpen ? 'w-64' : 'w-16'
                 )}
             >
-                <div className="flex h-16 items-center justify-between border-b border-indigo-800/30 px-4">
+                <div className="flex h-16 items-center justify-between border-b border-primary-800/30 px-4">
                     {sidebarOpen && (
                         <div className="flex items-center gap-2">
-                            <Shield className="h-6 w-6 text-indigo-400" />
+                            <Shield className="h-6 w-6 text-primary-400" />
                             <span className="text-lg font-bold text-white">Super Admin</span>
                         </div>
                     )}
                     <button
                         onClick={toggleSidebar}
                         aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-                        className="rounded p-1 text-gray-400 hover:text-white"
+                        className="rounded p-1 text-text-muted hover:text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                     >
                         <ChevronLeft
                             className={cn('h-5 w-5 transition-transform', !sidebarOpen && 'rotate-180')}
@@ -73,7 +73,7 @@ export function SuperAdminLayout() {
                     </button>
                 </div>
 
-                <nav className="flex-1 overflow-y-auto px-2 py-4">
+                <nav aria-label="Super admin navigation" className="flex-1 overflow-y-auto px-2 py-4">
                     <ul className="space-y-1">
                         {navItems.map((item) => (
                             <li key={item.to}>
@@ -83,8 +83,8 @@ export function SuperAdminLayout() {
                                         cn(
                                             'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                                             isActive
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'text-gray-300 hover:bg-indigo-800/40 hover:text-white',
+                                                ? 'bg-primary-600 text-white'
+                                                : 'text-text-muted hover:bg-primary-800/40 hover:text-white',
                                             !sidebarOpen && 'justify-center px-2'
                                         )
                                     }
@@ -99,14 +99,14 @@ export function SuperAdminLayout() {
                 </nav>
 
                 {sidebarOpen && user && (
-                    <div className="border-t border-indigo-800/30 p-4">
+                    <div className="border-t border-primary-800/30 p-4">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-medium text-white">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-sm font-medium text-white">
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 truncate">
                                 <p className="text-sm font-medium text-white">{user.name}</p>
-                                <p className="text-xs text-gray-400 capitalize">{user.role.replace('_', ' ')}</p>
+                                <p className="text-xs text-text-muted capitalize">{user.role.replace('_', ' ')}</p>
                             </div>
                         </div>
                     </div>
@@ -117,6 +117,8 @@ export function SuperAdminLayout() {
                 <div
                     className="fixed inset-0 z-30 bg-black/40 lg:hidden"
                     onClick={toggleSidebar}
+                    onKeyDown={(e) => e.key === 'Escape' && toggleSidebar()}
+                    tabIndex={-1}
                     aria-hidden="true"
                 />
             )}
@@ -128,9 +130,9 @@ export function SuperAdminLayout() {
                     sidebarOpen && 'lg:ml-64'
                 )}
             >
-                <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+                <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
                     <div className="flex items-center gap-3">
-                        <div className="rounded-md bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                        <div className="rounded-md bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700">
                             Platform Management
                         </div>
                     </div>
@@ -138,12 +140,12 @@ export function SuperAdminLayout() {
                     <div className="flex items-center gap-3">
                         <DropdownMenu
                             trigger={
-                                <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-gray-100">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-medium">
+                                <button aria-label="User menu" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-primary-700 font-medium">
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </div>
                                     <span className="hidden font-medium md:inline">{user?.name}</span>
-                                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    <ChevronDown className="h-4 w-4 text-text-muted" />
                                 </button>
                             }
                         >

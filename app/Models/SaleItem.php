@@ -24,6 +24,14 @@ class SaleItem extends Model
         'vat',
         'total',
         'prescription_required',
+        'units_per_pack',
+        'sell_mode',
+        'pieces_quantity',
+        'medicine_name',
+        'medicine_generic_name',
+        'medicine_strength',
+        'medicine_manufacturer',
+        'medicine_dosage_form',
     ];
 
     protected function casts(): array
@@ -36,6 +44,8 @@ class SaleItem extends Model
             'vat' => 'decimal:2',
             'total' => 'decimal:2',
             'prescription_required' => 'boolean',
+            'units_per_pack' => 'integer',
+            'pieces_quantity' => 'decimal:2',
         ];
     }
 

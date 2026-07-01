@@ -10,10 +10,13 @@ return new class extends Migration
     {
         Schema::create('salt_compositions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->index('company_id');
         });
     }
 

@@ -22,7 +22,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="flex min-h-screen items-center justify-center bg-surface-muted px-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
@@ -55,11 +55,11 @@ export default function LoginPage() {
                                     type="checkbox"
                                     checked={remember}
                                     onChange={(e) => setRemember(e.target.checked)}
-                                    className="rounded border-gray-300"
+                                    className="rounded border-border"
                                 />
                                 Remember me
                             </label>
-                            <span className="text-sm text-gray-500">Contact admin for password reset</span>
+                            <span className="text-sm text-text-muted">Contact admin for password reset</span>
                         </div>
                         {login.isError && (
                             <p className="text-sm text-danger-600">
@@ -70,7 +70,7 @@ export default function LoginPage() {
                             Sign in
                         </Button>
                     </form>
-                    <p className="mt-4 text-center text-sm text-gray-500">
+                    <p className="mt-4 text-center text-sm text-text-muted">
                         Don't have an account?{' '}
                         <Link to="/register" className="text-primary-600 hover:underline">
                             Register

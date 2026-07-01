@@ -34,7 +34,7 @@ export const suppliersService = {
     },
 
     recordPayment: async (supplierId: number, data: { amount: number; payment_method: string; reference_number?: string; purchase_id?: number; notes?: string }) => {
-        const res = await api.post<ApiResponse<SupplierPayment>>(`/suppliers/${supplierId}/payments`, data);
+        const res = await api.post<ApiResponse<SupplierPayment>>('/supplier-payments', { ...data, supplier_id: supplierId });
         return res.data;
     },
 };

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/ui/spinner';
-import { Settings, Save } from 'lucide-react';
+import { PaymentGatewayForm } from '@/components/super-admin/payment-gateway-form';
+import { Settings, CreditCard, Save } from 'lucide-react';
 import type { PlatformSetting } from '@/types/super-admin';
 
 const settingGroups = [
@@ -73,11 +74,21 @@ export default function SuperAdminSettingsPage() {
         select: (res) => res.data,
     });
 
+    const { data: gateways, isLoading: gatewaysLoading } = useQuery({
+        queryKey: ['super-admin', 'payment-gateways'],
+        queryFn: () => superAdminService.getPaymentGateways(),
+        select: (res) => res.data,
+    });
+
     useEffect(() => {
         if (settings) {
             const mapped: Record<string, string> = {};
-            settings.forEach((s) => {
-                mapped[s.key] = s.value ?? '';
+            Object.values(settings).forEach((group) => {
+                if (Array.isArray(group)) {
+                    group.forEach((s: { key: string; value: string | null }) => {
+                        mapped[s.key] = s.value ?? '';
+                    });
+                }
             });
             setFormState(mapped);
         }
@@ -98,7 +109,7 @@ export default function SuperAdminSettingsPage() {
         updateMutation.mutate();
     };
 
-    if (isLoading) return <PageLoader />;
+    if (isLoading || gatewaysLoading) return <PageLoader />;
 
     return (
         <div className="space-y-6">
@@ -140,6 +151,22 @@ export default function SuperAdminSettingsPage() {
                         </CardContent>
                     </Card>
                 ))}
+
+                {/* Payment Gateways Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5" />
+                        <h2 className="text-xl font-semibold">Payment Gateways</h2>
+                    </div>
+                    <p className="text-sm text-text-muted">
+                        Configure payment gateway credentials for subscription payments.
+                    </p>
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {gateways?.map((gateway) => (
+                            <PaymentGatewayForm key={gateway.id} gateway={gateway} />
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

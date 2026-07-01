@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\ReturnStatus;
 use App\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,14 +19,14 @@ class CustomerReturn extends Model
         'company_id',
         'outlet_id',
         'sale_id',
+        'customer_id',
         'processed_by',
         'return_number',
         'reason',
         'total_amount',
         'refund_amount',
-        'status',
-        'notes',
-        'returned_at',
+        'refund_method',
+        'return_date',
     ];
 
     protected function casts(): array
@@ -35,8 +34,7 @@ class CustomerReturn extends Model
         return [
             'total_amount' => 'decimal:2',
             'refund_amount' => 'decimal:2',
-            'status' => ReturnStatus::class,
-            'returned_at' => 'datetime',
+            'return_date' => 'date',
         ];
     }
 
@@ -60,6 +58,11 @@ class CustomerReturn extends Model
         return $this->belongsTo(Sale::class);
     }
 
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function processedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processed_by');
@@ -67,6 +70,6 @@ class CustomerReturn extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(CustomerReturnItem::class);
+        return $this->hasMany(CustomerReturnItem::class, 'return_id');
     }
 }

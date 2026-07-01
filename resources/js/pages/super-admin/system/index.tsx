@@ -7,7 +7,6 @@ import { PageLoader } from '@/components/ui/spinner';
 import {
     Server,
     Database,
-    HardDrive,
     RefreshCw,
     Zap,
     CheckCircle2,
@@ -33,10 +32,9 @@ export default function SuperAdminSystemPage() {
     if (isLoading) return <PageLoader />;
 
     const healthChecks = [
-        { label: 'Database', status: health?.database, icon: Database },
-        { label: 'Redis', status: health?.redis, icon: HardDrive },
-        { label: 'Cache', status: health?.cache, icon: Zap },
-        { label: 'Queue', status: health?.queue, icon: RefreshCw },
+        { label: 'Database', status: health?.checks?.database?.status, icon: Database },
+        { label: 'Cache', status: health?.checks?.cache?.status, icon: Zap },
+        { label: 'Queue', status: health?.checks?.queue?.status, icon: RefreshCw },
     ];
 
     return (
@@ -63,7 +61,7 @@ export default function SuperAdminSystemPage() {
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium">{check.label}</p>
-                                        <p className="text-xs text-gray-500">Service status</p>
+                                        <p className="text-xs text-text-muted">Service status</p>
                                     </div>
                                 </div>
                                 {check.status === 'ok' ? (
@@ -94,29 +92,29 @@ export default function SuperAdminSystemPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">PHP Version</p>
-                            <p className="mt-1 text-lg font-semibold">{typeof window !== 'undefined' ? 'Server-side' : '—'}</p>
+                        <div className="rounded-lg border border-border p-4">
+                            <p className="text-xs font-medium uppercase text-text-muted">PHP Version</p>
+                            <p className="mt-1 text-lg font-semibold">{health?.checks?.php_version?.message ?? '—'}</p>
                         </div>
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">Laravel Version</p>
-                            <p className="mt-1 text-lg font-semibold">11.x</p>
+                        <div className="rounded-lg border border-border p-4">
+                            <p className="text-xs font-medium uppercase text-text-muted">Laravel Version</p>
+                            <p className="mt-1 text-lg font-semibold">{health?.checks?.laravel_version?.message ?? '—'}</p>
                         </div>
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">Node.js</p>
-                            <p className="mt-1 text-lg font-semibold">Runtime</p>
+                        <div className="rounded-lg border border-border p-4">
+                            <p className="text-xs font-medium uppercase text-text-muted">System Status</p>
+                            <p className="mt-1 text-lg font-semibold capitalize">{health?.status ?? '—'}</p>
                         </div>
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">Database</p>
-                            <p className="mt-1 text-lg font-semibold">MySQL</p>
+                        <div className="rounded-lg border border-border p-4">
+                            <p className="text-xs font-medium uppercase text-text-muted">Database</p>
+                            <p className="mt-1 text-lg font-semibold">{health?.checks?.database?.message ?? '—'}</p>
                         </div>
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">Cache Driver</p>
-                            <p className="mt-1 text-lg font-semibold">Redis</p>
+                        <div className="rounded-lg border border-border p-4">
+                            <p className="text-xs font-medium uppercase text-text-muted">Cache</p>
+                            <p className="mt-1 text-lg font-semibold">{health?.checks?.cache?.message ?? '—'}</p>
                         </div>
-                        <div className="rounded-lg border border-gray-200 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">Queue Driver</p>
-                            <p className="mt-1 text-lg font-semibold">Redis</p>
+                        <div className="rounded-lg border border-border p-4">
+                            <p className="text-xs font-medium uppercase text-text-muted">Queue</p>
+                            <p className="mt-1 text-lg font-semibold">{health?.checks?.queue?.message ?? '—'}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -137,16 +135,7 @@ export default function SuperAdminSystemPage() {
                             onClick={() => clearCacheMutation.mutate()}
                             loading={clearCacheMutation.isPending}
                         >
-                            <RefreshCw className="mr-2 h-4 w-4" /> Clear All Cache
-                        </Button>
-                        <Button variant="outline" onClick={() => clearCacheMutation.mutate()} loading={clearCacheMutation.isPending}>
-                            <Database className="mr-2 h-4 w-4" /> Clear Config Cache
-                        </Button>
-                        <Button variant="outline" onClick={() => clearCacheMutation.mutate()} loading={clearCacheMutation.isPending}>
-                            <Zap className="mr-2 h-4 w-4" /> Clear Route Cache
-                        </Button>
-                        <Button variant="outline" onClick={() => clearCacheMutation.mutate()} loading={clearCacheMutation.isPending}>
-                            <HardDrive className="mr-2 h-4 w-4" /> Clear View Cache
+                            <RefreshCw className="mr-2 h-4 w-4" /> Clear Cache
                         </Button>
                     </div>
                 </CardContent>

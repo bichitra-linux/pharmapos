@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { superAdminService } from '@/services/super-admin';
@@ -6,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageLoader } from '@/components/ui/spinner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
     ArrowLeft,
@@ -25,6 +28,8 @@ export default function SuperAdminTenantShowPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+    const [suspendReason, setSuspendReason] = useState('');
 
     const { data: tenant, isLoading } = useQuery({
         queryKey: ['super-admin', 'tenants', id],
@@ -43,11 +48,11 @@ export default function SuperAdminTenantShowPage() {
     });
 
     if (isLoading) return <PageLoader />;
-    if (!tenant) return <div className="py-12 text-center text-gray-500">Tenant not found</div>;
+    if (!tenant) return <div className="py-12 text-center text-text-muted">Tenant not found</div>;
 
     const handleSuspend = () => {
-        const reason = prompt('Enter suspension reason:');
-        if (reason) suspendMutation.mutate(reason);
+        setShowSuspendDialog(true);
+        setSuspendReason('');
     };
 
     return (
@@ -93,68 +98,68 @@ export default function SuperAdminTenantShowPage() {
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs font-medium uppercase text-gray-500">Name</p>
+                                <p className="text-xs font-medium uppercase text-text-muted">Name</p>
                                 <p className="mt-1 text-sm">{tenant.name}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium uppercase text-gray-500">Slug</p>
+                                <p className="text-xs font-medium uppercase text-text-muted">Slug</p>
                                 <p className="mt-1 text-sm font-mono">{tenant.slug}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Mail className="h-4 w-4 text-gray-400" />
+                            <Mail className="h-4 w-4 text-text-muted" />
                             <span className="text-sm">{tenant.email}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Phone className="h-4 w-4 text-gray-400" />
+                            <Phone className="h-4 w-4 text-text-muted" />
                             <span className="text-sm">{tenant.phone}</span>
                         </div>
                         {tenant.address && (
                             <div className="flex items-center gap-3">
-                                <MapPin className="h-4 w-4 text-gray-400" />
+                                <MapPin className="h-4 w-4 text-text-muted" />
                                 <span className="text-sm">{tenant.address}</span>
                             </div>
                         )}
                         <div className="grid grid-cols-2 gap-4 pt-2">
                             {tenant.pan_number && (
                                 <div>
-                                    <p className="text-xs font-medium uppercase text-gray-500">PAN Number</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">PAN Number</p>
                                     <p className="mt-1 text-sm font-mono">{tenant.pan_number}</p>
                                 </div>
                             )}
                             {tenant.vat_number && (
                                 <div>
-                                    <p className="text-xs font-medium uppercase text-gray-500">VAT Number</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">VAT Number</p>
                                     <p className="mt-1 text-sm font-mono">{tenant.vat_number}</p>
                                 </div>
                             )}
                             {tenant.drug_license_number && (
                                 <div>
-                                    <p className="text-xs font-medium uppercase text-gray-500">Drug License</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">Drug License</p>
                                     <p className="mt-1 text-sm font-mono">{tenant.drug_license_number}</p>
                                 </div>
                             )}
                             {tenant.pharmacy_license_number && (
                                 <div>
-                                    <p className="text-xs font-medium uppercase text-gray-500">Pharmacy License</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">Pharmacy License</p>
                                     <p className="mt-1 text-sm font-mono">{tenant.pharmacy_license_number}</p>
                                 </div>
                             )}
                             {tenant.pharmacist_name && (
                                 <div>
-                                    <p className="text-xs font-medium uppercase text-gray-500">Pharmacist</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">Pharmacist</p>
                                     <p className="mt-1 text-sm">{tenant.pharmacist_name}</p>
                                 </div>
                             )}
                             {tenant.pharmacist_registration_number && (
                                 <div>
-                                    <p className="text-xs font-medium uppercase text-gray-500">Reg. Number</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">Reg. Number</p>
                                     <p className="mt-1 text-sm font-mono">{tenant.pharmacist_registration_number}</p>
                                 </div>
                             )}
                         </div>
                         <div className="pt-2">
-                            <p className="text-xs font-medium uppercase text-gray-500">Joined</p>
+                            <p className="text-xs font-medium uppercase text-text-muted">Joined</p>
                             <p className="mt-1 text-sm">{formatDate(tenant.created_at)}</p>
                         </div>
                         {tenant.suspended_at && (
@@ -181,42 +186,42 @@ export default function SuperAdminTenantShowPage() {
                             {tenant.subscription_plan ? (
                                 <div className="space-y-3">
                                     <div>
-                                        <p className="text-xs font-medium uppercase text-gray-500">Plan</p>
+                                        <p className="text-xs font-medium uppercase text-text-muted">Plan</p>
                                         <p className="mt-1 text-lg font-semibold">{tenant.subscription_plan.name}</p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <p className="text-xs font-medium uppercase text-gray-500">Monthly</p>
+                                            <p className="text-xs font-medium uppercase text-text-muted">Monthly</p>
                                             <p className="mt-1 text-sm">{formatCurrency(tenant.subscription_plan.price_monthly)}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-medium uppercase text-gray-500">Yearly</p>
+                                            <p className="text-xs font-medium uppercase text-text-muted">Yearly</p>
                                             <p className="mt-1 text-sm">{formatCurrency(tenant.subscription_plan.price_yearly)}</p>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                            <p className="text-xs font-medium uppercase text-gray-500">Outlets</p>
+                                            <p className="text-xs font-medium uppercase text-text-muted">Outlets</p>
                                             <p className="mt-1 text-sm">{tenant.subscription_plan.max_outlets}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-medium uppercase text-gray-500">Users</p>
+                                            <p className="text-xs font-medium uppercase text-text-muted">Users</p>
                                             <p className="mt-1 text-sm">{tenant.subscription_plan.max_users}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs font-medium uppercase text-gray-500">Medicines</p>
+                                            <p className="text-xs font-medium uppercase text-text-muted">Medicines</p>
                                             <p className="mt-1 text-sm">{tenant.subscription_plan.max_medicines}</p>
                                         </div>
                                     </div>
                                     {tenant.subscription_expires_at && (
                                         <div>
-                                            <p className="text-xs font-medium uppercase text-gray-500">Expires</p>
+                                            <p className="text-xs font-medium uppercase text-text-muted">Expires</p>
                                             <p className="mt-1 text-sm">{formatDate(tenant.subscription_expires_at)}</p>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <p className="text-sm text-gray-500">No active subscription</p>
+                                <p className="text-sm text-text-muted">No active subscription</p>
                             )}
                         </CardContent>
                     </Card>
@@ -243,7 +248,7 @@ export default function SuperAdminTenantShowPage() {
                                         {tenant.users.map((user) => (
                                             <TableRow key={user.id}>
                                                 <TableCell className="font-medium">{user.name}</TableCell>
-                                                <TableCell className="text-sm text-gray-500">{user.email}</TableCell>
+                                                <TableCell className="text-sm text-text-muted">{user.email}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="secondary" className="capitalize">{user.role}</Badge>
                                                 </TableCell>
@@ -259,7 +264,7 @@ export default function SuperAdminTenantShowPage() {
                                     </TableBody>
                                 </Table>
                             ) : (
-                                <p className="text-sm text-gray-500">No users</p>
+                                <p className="text-sm text-text-muted">No users</p>
                             )}
                         </CardContent>
                     </Card>
@@ -296,7 +301,7 @@ export default function SuperAdminTenantShowPage() {
                                                     {payment.status === 'expired' && <Badge variant="secondary">Expired</Badge>}
                                                     {payment.status === 'cancelled' && <Badge variant="destructive">Cancelled</Badge>}
                                                 </TableCell>
-                                                <TableCell className="text-sm text-gray-500">
+                                                <TableCell className="text-sm text-text-muted">
                                                     {formatDate(payment.created_at)}
                                                 </TableCell>
                                             </TableRow>
@@ -304,12 +309,44 @@ export default function SuperAdminTenantShowPage() {
                                     </TableBody>
                                 </Table>
                             ) : (
-                                <p className="text-sm text-gray-500">No payments</p>
+                                <p className="text-sm text-text-muted">No payments</p>
                             )}
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            <Dialog open={showSuspendDialog} onClose={() => setShowSuspendDialog(false)}>
+                <DialogHeader>
+                    <DialogTitle>Suspend Tenant</DialogTitle>
+                </DialogHeader>
+                <DialogContent>
+                    <Input
+                        label="Suspension Reason"
+                        value={suspendReason}
+                        onChange={(e) => setSuspendReason(e.target.value)}
+                        placeholder="Enter reason for suspension..."
+                    />
+                </DialogContent>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowSuspendDialog(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        disabled={!suspendReason.trim()}
+                        loading={suspendMutation.isPending}
+                        onClick={() => {
+                            if (suspendReason.trim()) {
+                                suspendMutation.mutate(suspendReason.trim());
+                                setShowSuspendDialog(false);
+                            }
+                        }}
+                    >
+                        Suspend
+                    </Button>
+                </DialogFooter>
+            </Dialog>
         </div>
     );
 }

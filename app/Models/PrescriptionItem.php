@@ -16,10 +16,11 @@ class PrescriptionItem extends Model
         'prescription_id',
         'salt_composition_id',
         'medicine_id',
-        'dosage_form',
-        'strength',
+        'medicine_name',
+        'dosage',
         'dosage_instructions',
-        'duration_days',
+        'frequency',
+        'duration',
         'quantity_prescribed',
         'quantity_dispensed',
         'notes',
@@ -28,9 +29,8 @@ class PrescriptionItem extends Model
     protected function casts(): array
     {
         return [
-            'duration_days' => 'integer',
-            'quantity_prescribed' => 'integer',
-            'quantity_dispensed' => 'integer',
+            'quantity_prescribed' => 'decimal:2',
+            'quantity_dispensed' => 'decimal:2',
         ];
     }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';
+import { useCartStore } from './cartStore';
 
 interface AuthState {
     user: User | null;
@@ -21,6 +22,7 @@ export const useAuthStore = create<AuthState>()(
                 set({ user, token, isAuthenticated: true });
             },
             logout: () => {
+                useCartStore.getState().clear();
                 set({ user: null, token: null, isAuthenticated: false });
             },
             updateUser: (userData) =>

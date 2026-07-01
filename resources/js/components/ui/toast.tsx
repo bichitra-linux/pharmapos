@@ -30,12 +30,22 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
 
+    const timersRef = React.useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+    React.useEffect(() => {
+        return () => {
+            timersRef.current.forEach((timer) => clearTimeout(timer));
+        };
+    }, []);
+
     const addToast = React.useCallback((toast: Omit<Toast, 'id'>) => {
         const id = Date.now().toString();
         setToasts((prev) => [...prev, { ...toast, id }]);
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             setToasts((prev) => prev.filter((t) => t.id !== id));
+            timersRef.current.delete(id);
         }, 5000);
+        timersRef.current.set(id, timer);
     }, []);
 
     const removeToast = React.useCallback((id: string) => {
@@ -77,21 +87,21 @@ function ToastContainer({
                     role={toast.type === 'error' ? 'alert' : 'status'}
                     aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
                     className={cn(
-                        'flex w-80 items-start gap-3 rounded-lg border bg-white p-4 shadow-lg transition-all duration-300 ease-in-out'
+                        'flex w-80 items-start gap-3 rounded-lg border bg-surface p-4 shadow-lg transition-all duration-300 ease-in-out'
                     )}
                 >
                     {icons[toast.type]}
                     <div className="flex-1">
                         <p className="text-sm font-medium">{toast.title}</p>
                         {toast.message && (
-                            <p className="mt-1 text-xs text-gray-500">{toast.message}</p>
+                            <p className="mt-1 text-xs text-text-muted">{toast.message}</p>
                         )}
                     </div>
                     <button
                         onClick={() => removeToast(toast.id)}
                         aria-label="Dismiss notification"
                     >
-                        <X className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                        <X className="h-4 w-4 text-text-muted" aria-hidden="true" />
                     </button>
                 </div>
             ))}

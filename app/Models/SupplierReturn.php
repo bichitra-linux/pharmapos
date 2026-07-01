@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\ReturnStatus;
 use App\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,19 +23,16 @@ class SupplierReturn extends Model
         'return_number',
         'reason',
         'total_amount',
-        'refund_amount',
-        'status',
+        'refund_status',
         'notes',
-        'returned_at',
+        'return_date',
     ];
 
     protected function casts(): array
     {
         return [
             'total_amount' => 'decimal:2',
-            'refund_amount' => 'decimal:2',
-            'status' => ReturnStatus::class,
-            'returned_at' => 'datetime',
+            'return_date' => 'date',
         ];
     }
 

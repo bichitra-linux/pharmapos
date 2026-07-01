@@ -19,6 +19,7 @@ class InvoiceService
         $lastSale = Sale::where('company_id', $companyId)
             ->where('invoice_number', 'like', "{$prefix}-{$date}-%")
             ->orderByDesc('invoice_number')
+            ->lockForUpdate()
             ->first();
 
         $sequence = 1;
@@ -62,7 +63,7 @@ class InvoiceService
 
         // Invoice info
         $lines[] = 'Invoice: '.$sale->invoice_number;
-        $lines[] = 'Date: '.$sale->sale_date->format('Y-m-d H:i');
+        $lines[] = 'Date: '.$sale->created_at->format('Y-m-d H:i');
         if ($sale->dispensedBy) {
             $lines[] = 'Cashier: '.$sale->dispensedBy->name;
         }
@@ -80,14 +81,14 @@ class InvoiceService
 
         // Items
         foreach ($sale->items as $item) {
-            $name = substr($item->medicine_name ?? $item->medicine->name, 0, 20);
-            $lines[] = sprintf('%-20s %4s %8s %10s', $name, number_format((float) $item->quantity, 0), number_format((float) $item->unit_price, 2), number_format((float) $item->total_amount, 2));
+            $name = substr($item->medicine->brand_name ?? 'Unknown', 0, 20);
+            $lines[] = sprintf('%-20s %4s %8s %10s', $name, number_format((float) $item->quantity, 0), number_format((float) $item->selling_price, 2), number_format((float) $item->total, 2));
 
-            if ($item->batch_number) {
-                $lines[] = sprintf('  Batch: %s', $item->batch_number);
+            if ($item->batch?->batch_number) {
+                $lines[] = sprintf('  Batch: %s', $item->batch->batch_number);
             }
-            if ((float) $item->discount_amount > 0) {
-                $lines[] = sprintf('  Discount: -%s', number_format((float) $item->discount_amount, 2));
+            if ((float) $item->discount > 0) {
+                $lines[] = sprintf('  Discount: -%s', number_format((float) $item->discount, 2));
             }
         }
 
@@ -112,16 +113,6 @@ class InvoiceService
         foreach ($sale->payments as $payment) {
             $methodName = $payment->paymentMethod?->name ?? 'Cash';
             $lines[] = sprintf('%-34s %10s', $methodName.':', number_format((float) $payment->amount, 2));
-        }
-
-        if ((float) $sale->change_amount > 0) {
-            $lines[] = sprintf('%-34s %10s', 'Change:', number_format((float) $sale->change_amount, 2));
-        }
-
-        // Loyalty points
-        if (($sale->loyalty_points_earned ?? 0) > 0) {
-            $lines[] = str_repeat('-', $charWidth);
-            $lines[] = sprintf('Loyalty Points Earned: %d', $sale->loyalty_points_earned);
         }
 
         // Footer
@@ -158,19 +149,19 @@ class InvoiceService
 
         $itemsHtml = '';
         foreach ($sale->items as $index => $item) {
-            $name = $item->medicine_name ?? $item->medicine->name;
+            $name = $item->medicine->brand_name ?? 'Unknown';
             $itemsHtml .= '<tr>';
             $itemsHtml .= '<td>'.($index + 1).'</td>';
             $itemsHtml .= '<td>'.e($name);
-            if ($item->batch_number) {
-                $itemsHtml .= '<br><small>Batch: '.e($item->batch_number).'</small>';
+            if ($item->batch?->batch_number) {
+                $itemsHtml .= '<br><small>Batch: '.e($item->batch->batch_number).'</small>';
             }
             $itemsHtml .= '</td>';
             $itemsHtml .= '<td class="text-right">'.number_format((float) $item->quantity, 0).'</td>';
-            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->unit_price, 2).'</td>';
-            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->discount_amount, 2).'</td>';
-            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->vat_amount, 2).'</td>';
-            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->total_amount, 2).'</td>';
+            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->selling_price, 2).'</td>';
+            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->discount, 2).'</td>';
+            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->vat, 2).'</td>';
+            $itemsHtml .= '<td class="text-right">'.number_format((float) $item->total, 2).'</td>';
             $itemsHtml .= '</tr>';
         }
 
@@ -184,13 +175,24 @@ class InvoiceService
         }
 
         $vatRate = $settings['vat_rate'] ?? 13;
+        $companyName = e($company->name);
+        $companyAddress = e($company->address ?? '');
+        $companyPhone = e($company->phone ?? '');
+        $companyPan = e($company->pan_number ?? '');
+        $invoiceNumber = e($sale->invoice_number);
+        $saleDate = e($sale->created_at->format('Y-m-d H:i'));
+        $cashierName = e($sale->dispensedBy?->name ?? '');
+        $customerName = e($sale->customer?->name ?? '');
+        $customerPhone = e($sale->customer?->phone ?? '');
+        $licenseNumber = e($company->pharmacy_license_number ?? '');
+        $pharmacistName = e($company->pharmacist_name ?? '');
 
         return <<<HTML
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Invoice {$sale->invoice_number}</title>
+    <title>Invoice {$invoiceNumber}</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #333; margin: 0; padding: 20px; }
         .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0,0,0,.15); }
@@ -213,23 +215,23 @@ class InvoiceService
     <div class="invoice-box">
         <div class="header">
             <div class="company-info">
-                <h1>{$company->name}</h1>
-                <p>{$company->address}</p>
-                <p>Ph: {$company->phone}</p>
-                <p>PAN: {$company->pan_number}</p>
+                <h1>{$companyName}</h1>
+                <p>{$companyAddress}</p>
+                <p>Ph: {$companyPhone}</p>
+                <p>PAN: {$companyPan}</p>
             </div>
             <div class="invoice-info">
                 <h2>INVOICE</h2>
-                <p><strong>Invoice #:</strong> {$sale->invoice_number}</p>
-                <p><strong>Date:</strong> {$sale->sale_date->format('Y-m-d H:i')}</p>
-                <p><strong>Cashier:</strong> {$sale->dispensedBy->name}</p>
+                <p><strong>Invoice #:</strong> {$invoiceNumber}</p>
+                <p><strong>Date:</strong> {$saleDate}</p>
+                <p><strong>Cashier:</strong> {$cashierName}</p>
             </div>
         </div>
 
         <div style="margin-bottom: 20px;">
             <strong>Bill To:</strong><br>
-            {$sale->customer->name}<br>
-            {$sale->customer->phone}
+            {$customerName}<br>
+            {$customerPhone}
         </div>
 
         <table>
@@ -279,7 +281,7 @@ class InvoiceService
 
         <div class="footer">
             <p>Thank you for your visit!</p>
-            <p>License: {$company->pharmacy_license_number} | Pharmacist: {$company->pharmacist_name}</p>
+            <p>License: {$licenseNumber} | Pharmacist: {$pharmacistName}</p>
         </div>
     </div>
 </body>

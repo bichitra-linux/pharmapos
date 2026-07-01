@@ -48,7 +48,7 @@ export const authService = {
     },
 
     changePassword: async (data: { current_password: string; password: string; password_confirmation: string }) => {
-        const res = await api.post<ApiResponse<null>>('/auth/change-password', data);
+        const res = await api.put<ApiResponse<null>>('/auth/password', data);
         return res.data;
     },
 };

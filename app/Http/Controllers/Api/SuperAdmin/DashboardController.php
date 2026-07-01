@@ -40,7 +40,7 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
 
-        $recentTenants = Company::withoutGlobalScopes()->latest()->take(10)->get();
+        $recentTenants = Company::query()->latest()->take(10)->get();
 
         return response()->json([
             'success' => true,

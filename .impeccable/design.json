@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-29T19:36:00+05:45",
+  "title": "Design System: PharmaPOS",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Clear Blue",
+        "canonical": "oklch(0.53 0.18 250)",
+        "tonalRamp": [
+          "oklch(0.18 0.08 250)",
+          "oklch(0.26 0.10 250)",
+          "oklch(0.32 0.12 250)",
+          "oklch(0.38 0.14 250)",
+          "oklch(0.45 0.16 250)",
+          "oklch(0.53 0.18 250)",
+          "oklch(0.65 0.16 250)",
+          "oklch(0.77 0.12 250)",
+          "oklch(0.87 0.08 250)",
+          "oklch(0.93 0.04 250)",
+          "oklch(0.97 0.02 250)"
+        ]
+      },
+      "success": {
+        "role": "success",
+        "displayName": "Pharmacy Green",
+        "canonical": "oklch(0.52 0.18 145)",
+        "tonalRamp": [
+          "oklch(0.24 0.08 145)",
+          "oklch(0.30 0.10 145)",
+          "oklch(0.37 0.12 145)",
+          "oklch(0.44 0.15 145)",
+          "oklch(0.52 0.18 145)",
+          "oklch(0.64 0.20 145)",
+          "oklch(0.76 0.18 145)",
+          "oklch(0.86 0.12 145)",
+          "oklch(0.93 0.06 145)",
+          "oklch(0.97 0.03 145)"
+        ]
+      },
+      "danger": {
+        "role": "danger",
+        "displayName": "Alert Red",
+        "canonical": "oklch(0.55 0.22 25)",
+        "tonalRamp": [
+          "oklch(0.18 0.05 25)",
+          "oklch(0.26 0.08 25)",
+          "oklch(0.33 0.12 25)",
+          "oklch(0.40 0.16 25)",
+          "oklch(0.48 0.20 25)",
+          "oklch(0.55 0.22 25)",
+          "oklch(0.65 0.20 25)",
+          "oklch(0.77 0.14 25)",
+          "oklch(0.87 0.08 25)",
+          "oklch(0.93 0.04 25)",
+          "oklch(0.97 0.02 25)"
+        ]
+      },
+      "warning": {
+        "role": "warning",
+        "displayName": "Caution Amber",
+        "canonical": "oklch(0.65 0.18 80)",
+        "tonalRamp": [
+          "oklch(0.20 0.05 80)",
+          "oklch(0.30 0.08 80)",
+          "oklch(0.37 0.10 80)",
+          "oklch(0.45 0.12 80)",
+          "oklch(0.55 0.16 80)",
+          "oklch(0.65 0.18 80)",
+          "oklch(0.72 0.18 80)",
+          "oklch(0.80 0.16 80)",
+          "oklch(0.87 0.12 80)",
+          "oklch(0.93 0.06 80)",
+          "oklch(0.97 0.02 80)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Deep Navy",
+        "canonical": "oklch(0.18 0.03 260)",
+        "tonalRamp": [
+          "oklch(0.15 0.02 260)",
+          "oklch(0.18 0.03 260)",
+          "oklch(0.22 0.04 260)",
+          "oklch(0.25 0.05 260)",
+          "oklch(0.30 0.05 260)",
+          "oklch(0.40 0.04 260)",
+          "oklch(0.50 0.03 260)",
+          "oklch(0.60 0.02 260)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Clean White",
+        "canonical": "oklch(1.00 0 0)"
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "Whisper Gray",
+        "canonical": "oklch(0.98 0.003 260)"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Subtle Divider",
+        "canonical": "oklch(0.88 0.005 260)"
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Deep Charcoal",
+        "canonical": "oklch(0.15 0.015 260)"
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Quiet Gray",
+        "canonical": "oklch(0.50 0.015 260)"
+      }
+    },
+    "typographyMeta": {
+      "heading": { "displayName": "Heading", "purpose": "Page titles, section headers. One per screen maximum." },
+      "title": { "displayName": "Title", "purpose": "Card titles, form section labels, table headers." },
+      "label": { "displayName": "Label", "purpose": "Form labels, button text, navigation items. Most-used weight." },
+      "body": { "displayName": "Body", "purpose": "General content, descriptions, help text." },
+      "small": { "displayName": "Small", "purpose": "Timestamps, secondary metadata, table cell details." }
+    },
+    "shadows": [
+      { "name": "ambient-low", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "Subtle lift on cards and containers." },
+      { "name": "ambient-high", "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", "purpose": "Floating elements: dropdowns, modals, popovers." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Hover states, focus rings, color changes." },
+      { "name": "duration-normal", "value": "300ms", "purpose": "Sidebar toggle, modal open/close, page transitions." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The default action button. Deep blue background, white text, 44px height.",
+      "html": "<button class=\"ds-btn-primary\">Dispense Medicine</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 10px 16px; background: oklch(0.45 0.16 250); color: oklch(1.00 0 0); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: background 150ms; } .ds-btn-primary:hover { background: oklch(0.38 0.14 250); } .ds-btn-primary:focus-visible { outline: 2px solid oklch(0.53 0.18 250); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action button. Bordered, transparent background.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 10px 16px; background: oklch(1.00 0 0); color: oklch(0.15 0.015 260); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 500; border: 1px solid oklch(0.88 0.005 260); border-radius: 6px; cursor: pointer; transition: background 150ms; } .ds-btn-outline:hover { background: oklch(0.98 0.003 260); } .ds-btn-outline:focus-visible { outline: 2px solid oklch(0.53 0.18 250); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard form input with label, error state, and focus ring.",
+      "html": "<div class=\"ds-input-group\"><label class=\"ds-input-label\">Medicine Name</label><input type=\"text\" class=\"ds-input\" placeholder=\"Search medicines...\" /></div>",
+      "css": ".ds-input-group { display: flex; flex-direction: column; width: 100%; } .ds-input-label { margin-bottom: 6px; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 500; color: oklch(0.15 0.015 260); } .ds-input { height: 40px; padding: 8px 12px; background: oklch(1.00 0 0); border: 1px solid oklch(0.88 0.005 260); border-radius: 6px; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; color: oklch(0.15 0.015 260); transition: border-color 150ms, box-shadow 150ms; } .ds-input::placeholder { color: oklch(0.50 0.015 260); } .ds-input:focus { outline: none; border-color: oklch(0.53 0.18 250); box-shadow: 0 0 0 2px oklch(0.53 0.18 250 / 0.2); } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Content container with subtle border and shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><h3 class=\"ds-card-title\">Stock Summary</h3></div><div class=\"ds-card-content\">1,247 medicines in stock</div></div>",
+      "css": ".ds-card { background: oklch(1.00 0 0); border: 1px solid oklch(0.88 0.005 260); border-radius: 8px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); } .ds-card-header { padding: 24px 24px 0; } .ds-card-title { font-family: 'Inter', system-ui, sans-serif; font-size: 18px; font-weight: 600; color: oklch(0.15 0.015 260); } .ds-card-content { padding: 24px; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; color: oklch(0.15 0.015 260); }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "sidebar",
+      "description": "Dark sidebar with navigation links. Collapses to icons on mobile.",
+      "html": "<nav class=\"ds-sidebar\"><a class=\"ds-nav-item ds-nav-active\">Dashboard</a><a class=\"ds-nav-item\">Medicines</a><a class=\"ds-nav-item\">Sales</a></nav>",
+      "css": ".ds-sidebar { width: 256px; height: 100vh; background: oklch(0.18 0.03 260); padding: 16px 8px; font-family: 'Inter', system-ui, sans-serif; } .ds-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; color: oklch(0.70 0.01 260); text-decoration: none; transition: background 150ms, color 150ms; cursor: pointer; } .ds-nav-item:hover { background: oklch(0.22 0.04 260); color: oklch(1.00 0 0); } .ds-nav-active { background: oklch(0.25 0.05 260); color: oklch(1.00 0 0); }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Status indicator pill. Used for schedule types, payment status, stock levels.",
+      "html": "<span class=\"ds-badge ds-badge-success\">Paid</span><span class=\"ds-badge ds-badge-danger\">Expired</span><span class=\"ds-badge ds-badge-warning\">Low Stock</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 10px; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 600; border-radius: 9999px; } .ds-badge-success { background: oklch(0.93 0.06 145); color: oklch(0.37 0.12 145); } .ds-badge-danger { background: oklch(0.93 0.04 25); color: oklch(0.40 0.16 25); } .ds-badge-warning { background: oklch(0.93 0.06 80); color: oklch(0.45 0.12 80); } .ds-badge-primary { background: oklch(0.93 0.04 250); color: oklch(0.38 0.14 250); }"
+    },
+    {
+      "name": "Dialog",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "Modal overlay with focus trapping, Escape key, and structured content areas.",
+      "html": "<div class=\"ds-dialog-overlay\"><div class=\"ds-dialog\"><div class=\"ds-dialog-header\"><h2 class=\"ds-dialog-title\">Complete Payment</h2></div><div class=\"ds-dialog-content\">Total: रू 1,250.00</div><div class=\"ds-dialog-footer\"><button class=\"ds-btn-outline\">Cancel</button><button class=\"ds-btn-primary\">Confirm</button></div></div></div>",
+      "css": ".ds-dialog-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: oklch(0.00 0 0 / 0.50); } .ds-dialog { background: oklch(1.00 0 0); border-radius: 8px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); padding: 24px; max-width: 512px; width: 100%; } .ds-dialog-header { margin-bottom: 16px; } .ds-dialog-title { font-family: 'Inter', system-ui, sans-serif; font-size: 18px; font-weight: 600; color: oklch(0.15 0.015 260); } .ds-dialog-content { padding: 16px 0; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; } .ds-dialog-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Organized Shelf",
+    "overview": "A pharmacy counter where every medicine has its place, every label is clear, and the pharmacist's hand moves with practiced efficiency. PharmaPOS translates that physical precision into a digital interface. The system is dense by design: a pharmacist checking stock needs to see batch numbers, expiry dates, quantities, and prices simultaneously. Progressive disclosure is reserved for settings and configuration, never for the dispensing workflow.\n\nThe color strategy is Restrained: tinted neutrals for the surface, one saturated primary accent for actions and selection. This is not a dashboard that needs to impress; it is a tool that needs to work. The OKLCH color space ensures perceptual uniformity across all tones, so a warning amber reads as urgently at 50% lightness as it does at 90%.\n\nThe single typeface (Inter) carries the full hierarchy through weight and size contrast. Tabular numerals ensure prices and quantities align vertically for quick scanning. The dark sidebar and light content area create clear spatial hierarchy without decorative elements.",
+    "keyCharacteristics": [
+      "Information density as a feature, not a problem",
+      "Single accent color (blue at hue 250) for all interactive elements",
+      "Semantic color vocabulary: primary for actions, success for confirmation, danger for errors/expiry, warning for alerts",
+      "Dark sidebar with light content area for spatial hierarchy",
+      "Inter as sole typeface with tabular numerals for numeric data",
+      "44px minimum touch targets on all interactive elements"
+    ],
+    "rules": [
+      { "name": "The Rarity Rule", "body": "The primary accent appears only on interactive elements and active states. It never decorates. Its scarcity is the point; when you see blue, you know you can click it.", "section": "colors" },
+      { "name": "The Tabular Numerals Rule", "body": "All numeric data (prices, quantities, dates) uses tabular figures. A pharmacist comparing stock levels across batches must be able to scan vertically without numbers jumping left and right.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear only as a response to state (hover, elevation, focus). No decorative shadows, no multi-layer depth effects, no inset shadows on inputs.", "section": "elevation" }
+    ],
+    "dos": [
+      "Use semantic color tokens (text-text, bg-surface, border-border) instead of hard-coded gray/white values",
+      "Use OKLCH for all color definitions",
+      "Maintain 44px minimum touch targets on all interactive elements",
+      "Show both AD and Bikram Sambat dates",
+      "Format currency as NPR with lakh/crore notation (रू 1,00,000)",
+      "Use Inter's tabular figures for all numeric data",
+      "Keep the sidebar dark and the content area light",
+      "Use focus-visible rings on all interactive elements"
+    ],
+    "donts": [
+      "Don't use gradient text, glassmorphism, or decorative blur effects",
+      "Don't use identical card grids with icon + big number + small label",
+      "Don't use purple gradients, neon accents, or crypto-aesthetic",
+      "Don't use playful fonts, rounded bubbly shapes, or gamification",
+      "Don't use em dashes in UI copy",
+      "Don't wrap everything in cards",
+      "Don't use bounce or elastic easing animations",
+      "Don't hide data behind progressive disclosure in the dispensing workflow",
+      "Don't use #000 or #fff directly"
+    ]
+  }
+}

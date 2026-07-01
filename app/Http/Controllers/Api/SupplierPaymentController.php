@@ -18,8 +18,7 @@ final class SupplierPaymentController extends Controller
             ->where('supplier_payments.company_id', $request->user()->company_id)
             ->select(
                 'supplier_payments.*',
-                'suppliers.name as supplier_name',
-                'suppliers.company_name'
+                'suppliers.name as supplier_name'
             );
 
         if ($request->filled('supplier_id')) {
@@ -51,7 +50,6 @@ final class SupplierPaymentController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|max:50',
             'reference_number' => 'nullable|string|max:100',
-            'payment_date' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
 
@@ -66,34 +64,66 @@ final class SupplierPaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Supplier not found.'], 404);
         }
 
-        $paymentId = DB::table('supplier_payments')->insertGetId([
-            'company_id' => $companyId,
-            'supplier_id' => $request->supplier_id,
-            'purchase_id' => $request->purchase_id,
-            'user_id' => $request->user()->id,
-            'amount' => $request->amount,
-            'payment_method' => $request->payment_method,
-            'reference_number' => $request->reference_number,
-            'payment_date' => $request->payment_date ?? now(),
-            'notes' => $request->notes,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Update purchase paid amount if linked
+        // Validate purchase belongs to the same supplier
         if ($request->purchase_id) {
-            DB::table('purchases')
+            $purchase = DB::table('purchases')
                 ->where('id', $request->purchase_id)
                 ->where('company_id', $companyId)
-                ->increment('paid_amount', $request->amount);
+                ->first();
 
-            $purchase = DB::table('purchases')->where('id', $request->purchase_id)->first();
-            if ($purchase && $purchase->paid_amount >= $purchase->total) {
-                DB::table('purchases')
-                    ->where('id', $request->purchase_id)
-                    ->update(['status' => 'paid']);
+            if (! $purchase) {
+                return response()->json(['success' => false, 'message' => 'Purchase not found.'], 404);
+            }
+
+            if ($purchase->supplier_id != $request->supplier_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase does not belong to the specified supplier.',
+                ], 422);
             }
         }
+
+        $paymentId = DB::transaction(function () use ($request, $companyId) {
+            $paymentId = DB::table('supplier_payments')->insertGetId([
+                'company_id' => $companyId,
+                'supplier_id' => $request->supplier_id,
+                'purchase_id' => $request->purchase_id,
+                'amount' => $request->amount,
+                'payment_method' => $request->payment_method,
+                'reference_number' => $request->reference_number,
+                'notes' => $request->notes,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            if ($request->purchase_id) {
+                // Lock the purchase row to prevent race conditions on paid_amount
+                $purchase = DB::table('purchases')
+                    ->where('id', $request->purchase_id)
+                    ->where('company_id', $companyId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($purchase) {
+                    $newPaidAmount = $purchase->paid_amount + $request->amount;
+                    $paymentStatus = 'due';
+                    if ($newPaidAmount >= $purchase->total) {
+                        $paymentStatus = 'paid';
+                    } elseif ($newPaidAmount > 0) {
+                        $paymentStatus = 'partial';
+                    }
+
+                    DB::table('purchases')
+                        ->where('id', $request->purchase_id)
+                        ->update([
+                            'paid_amount' => $newPaidAmount,
+                            'payment_status' => $paymentStatus,
+                        ]);
+                }
+            }
+
+            return $paymentId;
+        });
 
         $payment = DB::table('supplier_payments')->where('id', $paymentId)->first();
 

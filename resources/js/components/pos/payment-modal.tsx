@@ -16,9 +16,14 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
-    const cart = useCartStore();
+    const items = useCartStore((s) => s.items);
+    const discount_amount = useCartStore((s) => s.discount_amount);
+    const customer_id = useCartStore((s) => s.customer_id);
+    const prescription_id = useCartStore((s) => s.prescription_id);
+    const getTotal = useCartStore((s) => s.getTotal);
+    const clear = useCartStore((s) => s.clear);
     const { addToast } = useToast();
-    const total = cart.getTotal();
+    const total = getTotal();
     const [payments, setPayments] = useState<{ method_id: number; amount: number }[]>([]);
     const [processing, setProcessing] = useState(false);
 
@@ -45,30 +50,58 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
             return;
         }
 
+        // Check if any restricted items need prescription
+        const hasRestricted = items.some((i) => ['h', 'h1', 'x'].includes(i.name.toLowerCase().slice(0, 2)));
+        if (hasRestricted && !prescription_id) {
+            if (window.confirm('This sale contains schedule H/H1/X drugs without a linked prescription. Dispense anyway?')) {
+                // Pharmacist override — allowed to proceed
+            } else {
+                return;
+            }
+        }
+
         setProcessing(true);
         try {
             const res = await salesService.create({
-                customer_id: cart.customer_id ?? undefined,
-                prescription_id: cart.prescription_id ?? undefined,
-                items: cart.items.map((i) => ({
-                    medicine_id: i.medicine_id,
-                    batch_id: i.batch_id,
-                    quantity: i.quantity,
-                    unit_price: i.unit_price,
-                    discount: (i.unit_price * i.quantity * i.discount_percent) / 100,
-                })),
+                customer_id: customer_id ?? undefined,
+                prescription_id: prescription_id ?? undefined,
+                sale_type: useCartStore.getState().sale_type,
+                items: items.map((i) => {
+                    const isPiece = i.sell_mode === 'piece' && i.units_per_pack > 1;
+                    const outerQty = isPiece
+                        ? Math.round((i.quantity / i.units_per_pack) * 100) / 100
+                        : i.quantity;
+                    const pieceQty = isPiece ? i.quantity : i.quantity * (i.units_per_pack || 1);
+                    const effPrice = isPiece ? i.unit_price / i.units_per_pack : i.unit_price;
+                    const lineTotal = effPrice * i.quantity;
+                    const discount = (lineTotal * i.discount_percent) / 100;
+                    return {
+                        medicine_id: i.medicine_id,
+                        batch_id: i.batch_id,
+                        quantity: outerQty,
+                        unit_price: i.unit_price,
+                        discount,
+                        sell_mode: i.sell_mode,
+                        units_per_pack: i.units_per_pack,
+                        pieces_quantity: pieceQty,
+                    };
+                }),
                 payments: payments
                     .filter((p) => p.amount > 0)
                     .map((p) => ({
                         payment_method_id: p.method_id,
                         amount: p.amount,
                     })),
-                discount: cart.discount_amount,
+                discount: discount_amount,
             });
             addToast({ type: 'success', title: 'Sale completed successfully!' });
             onComplete(res.data.sale);
-        } catch {
-            addToast({ type: 'error', title: 'Failed to complete sale' });
+        } catch (err: any) {
+            const msg = err?.response?.data?.message
+                ?? err?.validationErrors
+                ?? err?.message
+                ?? 'Failed to complete sale';
+            addToast({ type: 'error', title: msg });
         } finally {
             setProcessing(false);
         }
@@ -80,8 +113,8 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                 <DialogTitle>Complete Payment</DialogTitle>
             </DialogHeader>
             <DialogContent>
-                <div className="mb-4 rounded-lg bg-gray-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">Total Amount</p>
+                <div className="mb-4 rounded-lg bg-surface-muted p-4 text-center">
+                    <p className="text-sm text-text-muted">Total Amount</p>
                     <p className="text-3xl font-bold text-primary-600">{formatCurrency(total)}</p>
                 </div>
 
@@ -92,7 +125,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                             <button
                                 key={method.id}
                                 onClick={() => addPayment(method.id)}
-                                className="rounded-lg border border-gray-200 bg-white p-2 text-sm font-medium hover:border-primary-500 hover:bg-primary-50"
+                                className="rounded-lg border border-border bg-surface p-2 text-sm font-medium hover:border-primary-500 hover:bg-primary-50"
                             >
                                 {method.name}
                             </button>
@@ -117,7 +150,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                                     <button
                                         onClick={() => removePayment(idx)}
                                         aria-label="Remove payment method"
-                                        className="min-h-[40px] min-w-[40px] text-danger-500 hover:text-danger-700"
+                                        className="min-h-[44px] min-w-[44px] text-danger-500 hover:text-danger-700"
                                     >
                                         ✕
                                     </button>

@@ -9,13 +9,15 @@ export function AppLayout() {
     const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-surface-muted">
             <Sidebar />
 
             {sidebarOpen && (
                 <div
                     className="fixed inset-0 z-30 bg-black/40 lg:hidden"
                     onClick={toggleSidebar}
+                    onKeyDown={(e) => e.key === 'Escape' && toggleSidebar()}
+                    tabIndex={-1}
                     aria-hidden="true"
                 />
             )}

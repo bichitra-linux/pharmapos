@@ -12,7 +12,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class TenantController extends Controller
@@ -100,7 +99,7 @@ class TenantController extends Controller
                 'outlet_id' => $outlet->id,
                 'name' => $request->admin_name,
                 'email' => $request->admin_email,
-                'password' => Hash::make($request->admin_password),
+                'password' => $request->admin_password,
                 'role' => 'owner',
                 'is_active' => true,
             ]);

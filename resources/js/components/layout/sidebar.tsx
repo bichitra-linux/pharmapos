@@ -39,13 +39,14 @@ const navItems = [
 ];
 
 export function Sidebar() {
-    const { sidebarOpen, toggleSidebar } = useUIStore();
+    const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+    const toggleSidebar = useUIStore((s) => s.toggleSidebar);
     const user = useAuthStore((s) => s.user);
 
     return (
         <aside
             className={cn(
-                'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-gray-200 bg-sidebar transition-all duration-300',
+                'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300',
                 sidebarOpen ? 'w-64' : 'w-16'
             )}
         >
@@ -59,7 +60,7 @@ export function Sidebar() {
                 <button
                     onClick={toggleSidebar}
                     aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-                    className="rounded p-1 text-gray-400 hover:text-white"
+                    className="rounded p-1 text-white/70 hover:text-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 >
                     <ChevronLeft
                         className={cn('h-5 w-5 transition-transform', !sidebarOpen && 'rotate-180')}
@@ -78,7 +79,7 @@ export function Sidebar() {
                                         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                                         isActive
                                             ? 'bg-sidebar-active text-white'
-                                            : 'text-gray-300 hover:bg-sidebar-hover hover:text-white',
+                                            : 'text-white/70 hover:bg-sidebar-hover hover:text-white',
                                         !sidebarOpen && 'justify-center px-2'
                                     )
                                 }
@@ -100,7 +101,7 @@ export function Sidebar() {
                         </div>
                         <div className="flex-1 truncate">
                             <p className="text-sm font-medium text-white">{user.name}</p>
-                            <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+                            <p className="text-xs text-white/70 capitalize">{user.role}</p>
                         </div>
                     </div>
                 </div>

@@ -28,6 +28,10 @@ final class EnsureCompanyIsActive
             return response()->json(['message' => 'Company account is suspended. Contact support.'], 403);
         }
 
+        if (! $company->isSubscriptionActive()) {
+            return response()->json(['message' => 'Subscription has expired. Please renew.'], 403);
+        }
+
         return $next($request);
     }
 }

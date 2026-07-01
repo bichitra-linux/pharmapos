@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Outlet;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,19 @@ final class UserController extends Controller
         ]);
 
         $companyId = $request->user()->company_id;
+
+        // Validate outlet belongs to company
+        if ($request->outlet_id) {
+            $outletExists = Outlet::where('id', $request->outlet_id)
+                ->where('company_id', $companyId)
+                ->exists();
+            if (! $outletExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected outlet does not belong to your company.',
+                ], 422);
+            }
+        }
 
         $existing = User::where('email', $request->email)
             ->where('company_id', $companyId)
@@ -96,7 +110,14 @@ final class UserController extends Controller
             'email' => ['sometimes', 'email', Rule::unique('users')->where(fn ($q) => $q->where('company_id', $user->company_id))->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
             'role' => 'sometimes|in:owner,admin,pharmacist,cashier,inventory_manager',
-            'outlet_id' => 'nullable|exists:outlets,id',
+            'outlet_id' => ['nullable', 'exists:outlets,id', function ($attribute, $value, $fail) use ($request) {
+                $outletExists = Outlet::where('id', $value)
+                    ->where('company_id', $request->user()->company_id)
+                    ->exists();
+                if (! $outletExists) {
+                    $fail('The selected outlet does not belong to your company.');
+                }
+            }],
             'permissions' => 'nullable|array',
             'is_active' => 'sometimes|boolean',
         ]);

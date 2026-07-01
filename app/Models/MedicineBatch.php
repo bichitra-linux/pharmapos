@@ -22,10 +22,15 @@ class MedicineBatch extends Model
         'manufacturing_date',
         'expiry_date',
         'quantity_in_stock',
+        'quantity_in_pieces',
+        'received_pieces',
         'purchase_price_per_unit',
         'mrp_per_unit',
         'selling_price_per_unit',
         'barcode',
+        'reorder_level',
+        'supplier_id',
+        'purchase_id',
         'is_active',
     ];
 
@@ -35,6 +40,8 @@ class MedicineBatch extends Model
             'expiry_date' => 'date',
             'manufacturing_date' => 'date',
             'quantity_in_stock' => 'decimal:2',
+            'quantity_in_pieces' => 'decimal:2',
+            'received_pieces' => 'decimal:2',
             'purchase_price_per_unit' => 'decimal:2',
             'mrp_per_unit' => 'decimal:2',
             'selling_price_per_unit' => 'decimal:2',
@@ -60,6 +67,16 @@ class MedicineBatch extends Model
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
     }
 
     public function scopeActive(Builder $query): Builder

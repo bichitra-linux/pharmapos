@@ -192,12 +192,10 @@ class InventoryService
                 }
 
                 AdjustmentItem::create([
-                    'inventory_adjustment_id' => $adjustment->id,
+                    'adjustment_id' => $adjustment->id,
                     'medicine_id' => $batch->medicine_id,
                     'batch_id' => $batch->id,
-                    'quantity_before' => $quantityBefore,
-                    'quantity_adjusted' => $quantityAdjusted,
-                    'quantity_after' => $quantityAfter,
+                    'quantity' => $quantityAdjusted,
                     'reason' => $item['reason'] ?? null,
                 ]);
 

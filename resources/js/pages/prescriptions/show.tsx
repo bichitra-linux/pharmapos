@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageLoader } from '@/components/ui/spinner';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, FileText } from 'lucide-react';
 
 export default function ShowPrescription() {
     const { id } = useParams();
@@ -39,7 +39,17 @@ export default function ShowPrescription() {
     });
 
     if (isLoading) return <PageLoader />;
-    if (!prescription) return <div>Prescription not found</div>;
+    if (!prescription) return (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <FileText className="h-12 w-12 text-text-muted" />
+            <h2 className="text-lg font-semibold text-text">Prescription not found</h2>
+            <p className="text-sm text-text-muted">The prescription you're looking for doesn't exist.</p>
+            <Button variant="outline" onClick={() => navigate('/prescriptions')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Prescriptions
+            </Button>
+        </div>
+    );
 
     return (
         <div className="space-y-6">
@@ -66,20 +76,20 @@ export default function ShowPrescription() {
                 <Card>
                     <CardHeader><CardTitle>Details</CardTitle></CardHeader>
                     <CardContent className="text-sm space-y-2">
-                        <div><span className="text-gray-500">Doctor:</span> {prescription.doctor_name}</div>
-                        {prescription.hospital_name && <div><span className="text-gray-500">Hospital:</span> {prescription.hospital_name}</div>}
-                        <div><span className="text-gray-500">Date:</span> {formatDate(prescription.prescription_date)}</div>
-                        <div><span className="text-gray-500">Customer:</span> {prescription.customer?.name || '-'}</div>
-                        {prescription.diagnosis && <div><span className="text-gray-500">Diagnosis:</span> {prescription.diagnosis}</div>}
+                        <div><span className="text-text-muted">Doctor:</span> {prescription.doctor_name}</div>
+                        {prescription.hospital_name && <div><span className="text-text-muted">Hospital:</span> {prescription.hospital_name}</div>}
+                        <div><span className="text-text-muted">Date:</span> {formatDate(prescription.prescription_date)}</div>
+                        <div><span className="text-text-muted">Customer:</span> {prescription.customer?.name || '-'}</div>
+                        {prescription.diagnosis && <div><span className="text-text-muted">Diagnosis:</span> {prescription.diagnosis}</div>}
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader><CardTitle>Image</CardTitle></CardHeader>
                     <CardContent>
                         {prescription.image_path ? (
-                            <img src={prescription.image_path} alt="Prescription" className="max-h-64 rounded border" />
+                            <img src={`/storage/${prescription.image_path}`} alt="Prescription" width={600} height={400} className="max-h-64 rounded border" />
                         ) : (
-                            <p className="text-sm text-gray-500">No image uploaded</p>
+                            <p className="text-sm text-text-muted">No image uploaded</p>
                         )}
                     </CardContent>
                 </Card>

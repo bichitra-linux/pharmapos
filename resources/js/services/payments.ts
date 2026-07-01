@@ -9,7 +9,7 @@ interface PaymentInitResponse {
 
 export const paymentsService = {
     initiateEsewa: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/esewa/initiate', {
+        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/esewa', {
             sale_id: saleId,
             amount,
         });
@@ -17,7 +17,7 @@ export const paymentsService = {
     },
 
     initiateKhalti: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/khalti/initiate', {
+        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/khalti', {
             sale_id: saleId,
             amount,
         });
@@ -25,7 +25,7 @@ export const paymentsService = {
     },
 
     initiateFonepay: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/fonepay/initiate', {
+        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/fonepay', {
             sale_id: saleId,
             amount,
         });
@@ -33,15 +33,12 @@ export const paymentsService = {
     },
 
     initiateConnectIPS: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/connectips/initiate', {
+        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/connectips', {
             sale_id: saleId,
             amount,
         });
         return res.data;
     },
 
-    verify: async (gateway: string, params: Record<string, string>) => {
-        const res = await api.post<ApiResponse<{ success: boolean }>>(`/payments/${gateway}/verify`, params);
-        return res.data;
-    },
+
 };

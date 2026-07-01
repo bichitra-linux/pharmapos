@@ -49,11 +49,11 @@ export const reportsService = {
         return res.data;
     },
 
-    export: async (type: string, params: Record<string, string | number>) => {
-        const res = await api.get(`/reports/${type}/export`, {
-            params,
-            responseType: 'blob',
-        });
-        return res.data;
-    },
+    // export: async (type: string, params: Record<string, string | number>) => {
+    //     const res = await api.get(`/reports/${type}/export`, {
+    //         params,
+    //         responseType: 'blob',
+    //     });
+    //     return res.data;
+    // },
 };

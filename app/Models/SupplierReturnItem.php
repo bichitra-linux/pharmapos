@@ -17,8 +17,7 @@ class SupplierReturnItem extends Model
         'medicine_id',
         'batch_id',
         'quantity',
-        'unit_price',
-        'total_amount',
+        'amount',
         'reason',
     ];
 
@@ -26,8 +25,7 @@ class SupplierReturnItem extends Model
     {
         return [
             'quantity' => 'decimal:2',
-            'unit_price' => 'decimal:2',
-            'total_amount' => 'decimal:2',
+            'amount' => 'decimal:2',
         ];
     }
 

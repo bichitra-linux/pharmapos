@@ -118,6 +118,8 @@ export default function CreatePurchase() {
                 vat_rate: i.tax_rate ?? 13,
             })),
             notes,
+            ...(dueDate && { due_date: dueDate }),
+            ...(supplierInvoice && { supplier_invoice_number: supplierInvoice }),
         });
     };
 
@@ -164,16 +166,16 @@ export default function CreatePurchase() {
                                     onChange={(e) => setMedSearch(e.target.value)}
                                 />
                                 {searchResults && searchResults.length > 0 && (
-                                    <div className="absolute top-full left-0 z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                                    <div className="absolute top-full left-0 z-10 mt-1 w-full rounded-lg border border-border bg-surface py-1 shadow-lg">
                                         {searchResults.map((med) => (
                                             <button
                                                 key={med.id}
                                                 type="button"
                                                 onClick={() => addItem(med)}
-                                                className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-gray-50"
+                                                className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-surface-muted"
                                             >
                                                 <span>{med.brand_name}</span>
-                                                <span className="text-gray-500">
+                                                <span className="text-text-muted">
                                                     {med.batches?.[0]?.purchase_price_per_unit != null
                                                         ? formatCurrency(med.batches[0].purchase_price_per_unit)
                                                         : 'No price'}
@@ -189,7 +191,7 @@ export default function CreatePurchase() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b text-left text-gray-500">
+                                        <tr className="border-b text-left text-text-muted">
                                             <th className="p-2">Medicine</th>
                                             <th className="p-2">Batch #</th>
                                             <th className="p-2">Mfg Date</th>
@@ -214,6 +216,7 @@ export default function CreatePurchase() {
                                                             type="text"
                                                             value={item.batch_number}
                                                             onChange={(e) => updateItem(idx, 'batch_number', e.target.value)}
+                                                            aria-label="Batch number"
                                                             className="w-24 rounded border px-2 py-1 text-sm"
                                                         />
                                                     </td>
@@ -222,6 +225,7 @@ export default function CreatePurchase() {
                                                             type="date"
                                                             value={item.manufacturing_date}
                                                             onChange={(e) => updateItem(idx, 'manufacturing_date', e.target.value)}
+                                                            aria-label="Manufacturing date"
                                                             className="w-32 rounded border px-2 py-1 text-sm"
                                                         />
                                                     </td>
@@ -230,6 +234,7 @@ export default function CreatePurchase() {
                                                             type="date"
                                                             value={item.expiry_date}
                                                             onChange={(e) => updateItem(idx, 'expiry_date', e.target.value)}
+                                                            aria-label="Expiry date"
                                                             className="w-32 rounded border px-2 py-1 text-sm"
                                                         />
                                                     </td>
@@ -238,6 +243,7 @@ export default function CreatePurchase() {
                                                             type="number"
                                                             value={item.quantity}
                                                             onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                                                            aria-label="Quantity"
                                                             className="w-16 rounded border px-2 py-1 text-sm"
                                                             min="1"
                                                         />
@@ -247,6 +253,7 @@ export default function CreatePurchase() {
                                                             type="number"
                                                             value={item.unit_price}
                                                             onChange={(e) => updateItem(idx, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                            aria-label="Purchase price"
                                                             className="w-24 rounded border px-2 py-1 text-sm"
                                                         />
                                                     </td>
@@ -255,6 +262,7 @@ export default function CreatePurchase() {
                                                             type="number"
                                                             value={item.discount_percent}
                                                             onChange={(e) => updateItem(idx, 'discount_percent', parseFloat(e.target.value) || 0)}
+                                                            aria-label="Discount percent"
                                                             className="w-16 rounded border px-2 py-1 text-sm"
                                                             min="0"
                                                             max="100"
@@ -262,7 +270,7 @@ export default function CreatePurchase() {
                                                     </td>
                                                     <td className="p-2 font-medium">{formatCurrency(lineTotal - disc + tax)}</td>
                                                     <td className="p-2">
-                                                        <button type="button" onClick={() => removeItem(idx)} className="text-danger-500 hover:text-danger-700">
+                                                        <button type="button" onClick={() => removeItem(idx)} aria-label="Remove item" className="text-danger-500 hover:text-danger-700">
                                                             <Trash2 className="h-4 w-4" />
                                                         </button>
                                                     </td>

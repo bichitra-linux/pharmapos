@@ -10,13 +10,11 @@ interface Notification {
 interface UIState {
     sidebarOpen: boolean;
     superAdminSidebarOpen: boolean;
-    theme: 'light' | 'dark';
     notifications: Notification[];
     toggleSidebar: () => void;
     setSidebarOpen: (open: boolean) => void;
     toggleSuperAdminSidebar: () => void;
     setSuperAdminSidebarOpen: (open: boolean) => void;
-    setTheme: (theme: 'light' | 'dark') => void;
     addNotification: (notification: Omit<Notification, 'id'>) => void;
     removeNotification: (id: string) => void;
     clearNotifications: () => void;
@@ -25,20 +23,18 @@ interface UIState {
 export const useUIStore = create<UIState>()((set) => ({
     sidebarOpen: true,
     superAdminSidebarOpen: true,
-    theme: 'light',
     notifications: [],
 
     toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     toggleSuperAdminSidebar: () => set((state) => ({ superAdminSidebarOpen: !state.superAdminSidebarOpen })),
     setSuperAdminSidebarOpen: (open) => set({ superAdminSidebarOpen: open }),
-    setTheme: (theme) => set({ theme }),
 
     addNotification: (notification) =>
         set((state) => ({
             notifications: [
                 ...state.notifications,
-                { ...notification, id: Date.now().toString() },
+                { ...notification, id: crypto.randomUUID() },
             ],
         })),
 

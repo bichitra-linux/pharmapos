@@ -13,11 +13,13 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Medicine extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -39,6 +41,8 @@ class Medicine extends Model
         'description',
         'storage_conditions',
         'is_temperature_sensitive',
+        'allow_piece_selling',
+        'piece_unit_label',
     ];
 
     protected function casts(): array
@@ -49,6 +53,7 @@ class Medicine extends Model
             'schedule_type' => ScheduleType::class,
             'is_prescription_required' => 'boolean',
             'is_temperature_sensitive' => 'boolean',
+            'allow_piece_selling' => 'boolean',
             'units_per_pack' => 'integer',
             'is_active' => 'boolean',
         ];
@@ -99,21 +104,33 @@ class Medicine extends Model
         return $query->where('is_prescription_required', true);
     }
 
+    public function substitutes(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Medicine::class,
+            'substitutes',
+            'medicine_id_1',
+            'medicine_id_2'
+        )->withPivot('notes');
+    }
+
+    public function substitutedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Medicine::class,
+            'substitutes',
+            'medicine_id_2',
+            'medicine_id_1'
+        )->withPivot('notes');
+    }
+
+    public function allSubstitutes(): Collection
+    {
+        return $this->substitutes->merge($this->substitutedBy)->unique('id');
+    }
+
     public function getSubstitutesAttribute(): Collection
     {
-        $medicineIds = Substitute::query()
-            ->where('medicine_one_id', $this->id)
-            ->orWhere('medicine_two_id', $this->id)
-            ->pluck('medicine_one_id')
-            ->merge(
-                Substitute::query()
-                    ->where('medicine_one_id', $this->id)
-                    ->orWhere('medicine_two_id', $this->id)
-                    ->pluck('medicine_two_id')
-            )
-            ->unique()
-            ->reject(fn (int $id) => $id === $this->id);
-
-        return static::whereIn('id', $medicineIds)->get();
+        return $this->allSubstitutes();
     }
 }

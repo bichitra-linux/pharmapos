@@ -60,31 +60,53 @@ final class SupplierReturnController extends Controller
             $outletId = $request->user()->outlet_id;
             $totalAmount = 0;
 
+            // Generate return number with lock to prevent race conditions
+            $dateStr = now()->format('Ymd');
+            $prefix = "SRET-{$companyId}-{$dateStr}-";
+            $lastReturn = DB::table('supplier_returns')
+                ->where('company_id', $companyId)
+                ->where('return_number', 'like', $prefix.'%')
+                ->lockForUpdate()
+                ->max('return_number');
+
+            $sequence = 1;
+            if ($lastReturn) {
+                $lastSequence = (int) substr($lastReturn, -4);
+                $sequence = $lastSequence >= 9999 ? 1 : $lastSequence + 1;
+            }
+            $returnNumber = $prefix.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+
             $returnId = DB::table('supplier_returns')->insertGetId([
                 'company_id' => $companyId,
                 'outlet_id' => $outletId,
                 'supplier_id' => $request->supplier_id,
                 'purchase_id' => $request->purchase_id,
-                'user_id' => $request->user()->id,
-                'return_number' => 'SRET-'.$companyId.'-'.now()->format('YmdHis'),
+                'return_number' => $returnNumber,
+                'return_date' => now(),
                 'total_amount' => 0,
-                'status' => 'completed',
-                'notes' => $request->notes,
+                'refund_status' => 'received',
+                'reason' => $request->notes,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            foreach ($request->items as $item) {
-                $batch = DB::table('medicine_batches')
-                    ->where('id', $item['batch_id'])
-                    ->where('outlet_id', $outletId)
-                    ->first();
+            // Batch-fetch and lock batches for stock updates
+            $batchIds = collect($request->items)->pluck('batch_id')->unique();
+            $batches = DB::table('medicine_batches')
+                ->where('outlet_id', $outletId)
+                ->whereIn('id', $batchIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
-                if (! $batch || $batch->quantity < $item['quantity']) {
+            foreach ($request->items as $item) {
+                $batch = $batches->get($item['batch_id']);
+
+                if (! $batch || $batch->quantity_in_stock < $item['quantity']) {
                     throw new \Exception('Insufficient stock in batch for return.');
                 }
 
-                $itemTotal = $batch->purchase_price * $item['quantity'];
+                $itemTotal = $batch->purchase_price_per_unit * $item['quantity'];
                 $totalAmount += $itemTotal;
 
                 DB::table('supplier_return_items')->insert([
@@ -92,8 +114,7 @@ final class SupplierReturnController extends Controller
                     'medicine_id' => $item['medicine_id'],
                     'batch_id' => $item['batch_id'],
                     'quantity' => $item['quantity'],
-                    'purchase_price' => $batch->purchase_price,
-                    'total' => $itemTotal,
+                    'amount' => $itemTotal,
                     'reason' => $item['reason'] ?? null,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -102,7 +123,7 @@ final class SupplierReturnController extends Controller
                 // Deduct stock
                 DB::table('medicine_batches')
                     ->where('id', $item['batch_id'])
-                    ->decrement('quantity', $item['quantity']);
+                    ->decrement('quantity_in_stock', $item['quantity']);
             }
 
             DB::table('supplier_returns')

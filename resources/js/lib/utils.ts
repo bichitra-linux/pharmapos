@@ -7,7 +7,8 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined): string {
+    if (amount == null) return '—';
     const absAmount = Math.abs(amount);
     const formatted = absAmount.toLocaleString('en-IN', {
         minimumFractionDigits: 2,
@@ -16,13 +17,36 @@ export function formatCurrency(amount: number): string {
     return amount < 0 ? `-रू ${formatted}` : `रू ${formatted}`;
 }
 
-export function formatDate(date: string | Date, pattern: string = 'dd MMM yyyy'): string {
-    const d = typeof date === 'string' ? parseISO(date) : date;
-    return format(d, pattern);
+export function formatDate(date: string | Date | null | undefined, pattern: string = 'dd MMM yyyy'): string {
+    if (!date) return '—';
+    try {
+        const d = typeof date === 'string' ? parseISO(date) : date;
+        if (isNaN(d.getTime())) return '—';
+        return format(d, pattern);
+    } catch {
+        return '—';
+    }
 }
 
-export function formatDateTime(date: string | Date): string {
+export function formatDateTime(date: string | Date | null | undefined): string {
     return formatDate(date, 'dd MMM yyyy HH:mm');
+}
+
+export function formatNepaliDate(date: string | Date | null | undefined): string {
+    if (!date) return '';
+    try {
+        const d = typeof date === 'string' ? parseISO(date) : date;
+        if (isNaN(d.getTime())) return '';
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const day = d.getDate();
+        const bsYear = year + 56;
+        const bsMonth = (month + 9) % 12;
+        const bsMonthNames = ['Baisakh', 'Jestha', 'Ashadh', 'Shrawan', 'Bhadra', 'Ashwin', 'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra'];
+        return `${day} ${bsMonthNames[bsMonth]} ${bsYear}`;
+    } catch {
+        return '';
+    }
 }
 
 export function formatNumber(num: number): string {

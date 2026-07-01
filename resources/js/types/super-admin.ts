@@ -37,6 +37,7 @@ export interface TenantSummary {
     subscription_plan_id: number | null;
     subscription_expires_at: string | null;
     created_at: string;
+    subscriptionPlan?: SubscriptionPlan;
 }
 
 export interface TenantDetail extends TenantSummary {
@@ -91,6 +92,15 @@ export interface SubscriptionPayment {
     plan?: SubscriptionPlan;
 }
 
+export interface RevenueResponse {
+    total_revenue: number;
+    current_month: number;
+    previous_month: number;
+    growth_rate: number;
+    monthly: { month: string; total: number; count: number }[];
+    yearly: { year: number; total: number; count: number }[];
+}
+
 export interface PlatformSetting {
     id: number;
     key: string;
@@ -98,9 +108,37 @@ export interface PlatformSetting {
     group: string;
 }
 
+export interface PaymentGateway {
+    id: number;
+    code: string;
+    name: string;
+    is_active: boolean;
+    is_sandbox: boolean;
+    config: {
+        merchant_code?: string;
+        merchant_id?: string;
+        secret_key?: string;
+        api_url?: string;
+        verify_url?: string;
+        payment_url?: string;
+        success_url?: string;
+        failure_url?: string;
+        return_url?: string;
+        app_id?: string;
+        app_name?: string;
+    };
+    created_at: string;
+    updated_at: string;
+}
+
 export interface SystemHealth {
-    database: 'ok' | 'error';
-    redis: 'ok' | 'error';
-    cache: 'ok' | 'error';
-    queue: 'ok' | 'error';
+    status: 'healthy' | 'degraded';
+    checks: {
+        database: { status: 'ok' | 'error'; message: string };
+        cache: { status: 'ok' | 'error'; message: string };
+        queue: { status: 'ok' | 'error'; message: string };
+        php_version: { status: 'ok' | 'error'; message: string };
+        laravel_version: { status: 'ok' | 'error'; message: string };
+    };
+    timestamp: string;
 }

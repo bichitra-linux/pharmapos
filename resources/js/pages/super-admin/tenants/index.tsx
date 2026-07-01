@@ -33,6 +33,8 @@ export default function SuperAdminTenantsPage() {
     const [status, setStatus] = useState('all');
     const [page, setPage] = useState(1);
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [suspendId, setSuspendId] = useState<number | null>(null);
+    const [suspendReason, setSuspendReason] = useState('');
 
     const { data, isLoading } = useQuery({
         queryKey: ['super-admin', 'tenants', search, status, page],
@@ -64,8 +66,8 @@ export default function SuperAdminTenantsPage() {
     });
 
     const handleSuspend = (id: number) => {
-        const reason = prompt('Enter suspension reason:');
-        if (reason) suspendMutation.mutate({ id, reason });
+        setSuspendId(id);
+        setSuspendReason('');
     };
 
     const statusOptions = [
@@ -90,8 +92,8 @@ export default function SuperAdminTenantsPage() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>All Tenants</CardTitle>
                         <div className="flex gap-3">
-                            <div className="relative w-64">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <div className="relative w-full sm:w-64">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
                                 <input
                                     type="text"
                                     value={search}
@@ -100,7 +102,7 @@ export default function SuperAdminTenantsPage() {
                                         setPage(1);
                                     }}
                                     placeholder="Search by name or email..."
-                                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 text-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                    className="flex h-10 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                                 />
                             </div>
                             <Select
@@ -117,6 +119,7 @@ export default function SuperAdminTenantsPage() {
                 <CardContent>
                     {data?.data && data.data.length > 0 ? (
                         <>
+                            <div className="overflow-visible">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -133,12 +136,12 @@ export default function SuperAdminTenantsPage() {
                                     {data.data.map((tenant) => (
                                         <TableRow key={tenant.id}>
                                             <TableCell className="font-medium">{tenant.name}</TableCell>
-                                            <TableCell className="text-sm text-gray-500">{tenant.email}</TableCell>
+                                            <TableCell className="text-sm text-text-muted">{tenant.email}</TableCell>
                                             <TableCell>
                                                 {tenant.subscription_plan_id ? (
                                                     <Badge variant="default">Plan #{tenant.subscription_plan_id}</Badge>
                                                 ) : (
-                                                    <span className="text-sm text-gray-400">None</span>
+                                                    <span className="text-sm text-text-muted">None</span>
                                                 )}
                                             </TableCell>
                                             <TableCell>
@@ -150,19 +153,19 @@ export default function SuperAdminTenantsPage() {
                                                     <Badge variant="secondary">Inactive</Badge>
                                                 )}
                                             </TableCell>
-                                            <TableCell className="text-sm text-gray-500">
+                                            <TableCell className="text-sm text-text-muted">
                                                 {tenant.subscription_expires_at
                                                     ? formatDate(tenant.subscription_expires_at)
                                                     : '—'}
                                             </TableCell>
-                                            <TableCell className="text-sm text-gray-500">
+                                            <TableCell className="text-sm text-text-muted">
                                                 {formatDate(tenant.created_at)}
                                             </TableCell>
                                             <TableCell>
                                                 <DropdownMenu
                                                     trigger={
-                                                        <button className="rounded p-1 hover:bg-gray-100">
-                                                            <MoreVertical className="h-4 w-4 text-gray-500" />
+                                                        <button className="rounded p-1 hover:bg-surface-muted">
+                                                            <MoreVertical className="h-4 w-4 text-text-muted" />
                                                         </button>
                                                     }
                                                 >
@@ -189,6 +192,7 @@ export default function SuperAdminTenantsPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                            </div>
                             {data.meta && (
                                 <div className="mt-4">
                                     <Pagination
@@ -214,7 +218,7 @@ export default function SuperAdminTenantsPage() {
                     <DialogTitle>Delete Tenant</DialogTitle>
                 </DialogHeader>
                 <DialogContent>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-text-muted">
                         Are you sure you want to delete this tenant? This action cannot be undone.
                         All data associated with this tenant will be permanently removed.
                     </p>
@@ -229,6 +233,38 @@ export default function SuperAdminTenantsPage() {
                         onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                     >
                         Delete
+                    </Button>
+                </DialogFooter>
+            </Dialog>
+
+            <Dialog open={suspendId !== null} onClose={() => setSuspendId(null)}>
+                <DialogHeader>
+                    <DialogTitle>Suspend Tenant</DialogTitle>
+                </DialogHeader>
+                <DialogContent>
+                    <Input
+                        label="Suspension Reason"
+                        value={suspendReason}
+                        onChange={(e) => setSuspendReason(e.target.value)}
+                        placeholder="Enter reason for suspension..."
+                    />
+                </DialogContent>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setSuspendId(null)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        disabled={!suspendReason.trim()}
+                        loading={suspendMutation.isPending}
+                        onClick={() => {
+                            if (suspendId && suspendReason.trim()) {
+                                suspendMutation.mutate({ id: suspendId, reason: suspendReason.trim() });
+                                setSuspendId(null);
+                            }
+                        }}
+                    >
+                        Suspend
                     </Button>
                 </DialogFooter>
             </Dialog>

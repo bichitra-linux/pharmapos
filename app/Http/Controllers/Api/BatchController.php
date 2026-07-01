@@ -38,8 +38,8 @@ final class BatchController extends Controller
         }
 
         if ($request->boolean('low_stock')) {
-            $query->where('medicine_batches.quantity', '>', 0)
-                ->where('medicine_batches.quantity', '<=', DB::raw('medicine_batches.reorder_level'));
+            $query->where('medicine_batches.quantity_in_stock', '>', 0)
+                ->where('medicine_batches.quantity_in_stock', '<=', DB::raw('COALESCE(medicine_batches.reorder_level, 10)'));
         }
 
         $batches = $query->orderBy('medicine_batches.expiry_date')
@@ -74,14 +74,15 @@ final class BatchController extends Controller
         }
 
         $batchId = DB::table('medicine_batches')->insertGetId([
+            'company_id' => $request->user()->company_id,
             'medicine_id' => $request->medicine_id,
             'outlet_id' => $request->user()->outlet_id,
             'batch_number' => $request->batch_number,
             'expiry_date' => $request->expiry_date,
-            'quantity' => $request->quantity,
-            'purchase_price' => $request->purchase_price,
-            'selling_price' => $request->selling_price ?? $medicine->selling_price,
-            'mrp' => $request->mrp ?? $medicine->mrp,
+            'quantity_in_stock' => $request->quantity,
+            'purchase_price_per_unit' => $request->purchase_price,
+            'selling_price_per_unit' => $request->selling_price ?? $request->purchase_price,
+            'mrp_per_unit' => $request->mrp ?? $request->purchase_price,
             'manufacturing_date' => $request->manufacturing_date,
             'created_at' => now(),
             'updated_at' => now(),
@@ -137,12 +138,17 @@ final class BatchController extends Controller
             return response()->json(['success' => false, 'message' => 'Batch not found.'], 404);
         }
 
+        $updateData = ['updated_at' => now()];
+        if ($request->has('batch_number')) $updateData['batch_number'] = $request->batch_number;
+        if ($request->has('expiry_date')) $updateData['expiry_date'] = $request->expiry_date;
+        if ($request->has('quantity')) $updateData['quantity_in_stock'] = $request->quantity;
+        if ($request->has('purchase_price')) $updateData['purchase_price_per_unit'] = $request->purchase_price;
+        if ($request->has('selling_price')) $updateData['selling_price_per_unit'] = $request->selling_price;
+        if ($request->has('mrp')) $updateData['mrp_per_unit'] = $request->mrp;
+
         DB::table('medicine_batches')
             ->where('id', $id)
-            ->update(array_merge(
-                $request->only(['batch_number', 'expiry_date', 'quantity', 'purchase_price', 'selling_price', 'mrp']),
-                ['updated_at' => now()]
-            ));
+            ->update($updateData);
 
         $updated = DB::table('medicine_batches')->where('id', $id)->first();
 
@@ -163,7 +169,7 @@ final class BatchController extends Controller
             ->join('medicines', 'medicines.id', '=', 'medicine_batches.medicine_id')
             ->where('medicines.company_id', $companyId)
             ->where('medicine_batches.outlet_id', $outletId)
-            ->where('medicine_batches.quantity', '>', 0)
+            ->where('medicine_batches.quantity_in_stock', '>', 0)
             ->whereDate('medicine_batches.expiry_date', '<=', now()->addDays($days))
             ->whereDate('medicine_batches.expiry_date', '>=', now())
             ->select(

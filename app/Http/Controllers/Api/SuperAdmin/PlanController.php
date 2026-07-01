@@ -20,7 +20,7 @@ class PlanController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $plans = $query->orderBy('sort_order')->orderBy('price_monthly')
+        $plans = $query->orderBy('price_monthly')
             ->paginate($request->input('per_page', 15));
 
         return $this->paginated($plans);
@@ -37,7 +37,6 @@ class PlanController extends Controller
             'max_medicines' => 'required|integer|min:0',
             'features' => 'nullable|array',
             'is_active' => 'sometimes|boolean',
-            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         $plan = SubscriptionPlan::create($request->only([
@@ -49,7 +48,6 @@ class PlanController extends Controller
             'max_medicines',
             'features',
             'is_active',
-            'sort_order',
         ]));
 
         return $this->created($plan, 'Plan created successfully.');
@@ -73,7 +71,6 @@ class PlanController extends Controller
             'max_medicines' => 'sometimes|integer|min:0',
             'features' => 'nullable|array',
             'is_active' => 'sometimes|boolean',
-            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         $plan->update($request->only([
@@ -85,7 +82,6 @@ class PlanController extends Controller
             'max_medicines',
             'features',
             'is_active',
-            'sort_order',
         ]));
 
         return $this->success($plan->fresh(), 'Plan updated successfully.');
