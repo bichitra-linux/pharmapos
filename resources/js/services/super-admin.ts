@@ -264,4 +264,52 @@ export const superAdminService = {
         const res = await superAdminApi.post<ApiResponse<{ message: string }>>(`payment-gateways/${id}/test`);
         return res.data;
     },
+
+    // Tenant impersonation & usage
+    impersonateTenant: async (id: number) => {
+        const res = await superAdminApi.post<ApiResponse<{ token: string; user: any; tenant: any; expires_at: string }>>(`tenants/${id}/impersonate`);
+        return res.data;
+    },
+
+    getTenantUsage: async (id: number) => {
+        const res = await superAdminApi.get<ApiResponse<{
+            users_count: number; outlets_count: number; medicines_count: number;
+            customers_count: number; sales_this_month: number; sales_total: number;
+            plan_limit_medicines?: number; plan_limit_users?: number; plan_limit_outlets?: number;
+            medicines_percent?: number; users_percent?: number; outlets_percent?: number;
+        }>>(`tenants/${id}/usage`);
+        return res.data;
+    },
+
+    // Audit logs
+    getAuditLogs: async (params?: Record<string, string | number | boolean>) => {
+        const res = await superAdminApi.get('audit-logs', { params });
+        return extractPaginatedData<Record<string, unknown>>(res.data);
+    },
+
+    // Landing page
+    getLanding: async () => {
+        const res = await superAdminApi.get<ApiResponse<Record<string, unknown>>>('landing');
+        return res.data;
+    },
+
+    updateLanding: async (data: Record<string, unknown>) => {
+        const res = await superAdminApi.put<ApiResponse<Record<string, unknown>>>('landing', data);
+        return res.data;
+    },
+
+    publishLanding: async () => {
+        const res = await superAdminApi.post<ApiResponse<Record<string, unknown>>>('landing/publish');
+        return res.data;
+    },
+
+    getLandingRevisions: async () => {
+        const res = await superAdminApi.get('landing/revisions');
+        return extractPaginatedData<Record<string, unknown>>(res.data);
+    },
+
+    restoreLandingRevision: async (revisionId: number) => {
+        const res = await superAdminApi.post<ApiResponse<Record<string, unknown>>>(`landing/revisions/${revisionId}/restore`);
+        return res.data;
+    },
 };

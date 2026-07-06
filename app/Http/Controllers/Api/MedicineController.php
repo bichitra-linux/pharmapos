@@ -323,4 +323,37 @@ final class MedicineController extends Controller
             ],
         ]);
     }
+
+    public function bulkPriceUpdate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'medicine_ids' => 'required|array|min:1',
+            'medicine_ids.*' => 'integer|exists:medicines,id',
+            'percentage' => 'required|numeric|min:-100|max:500',
+        ]);
+
+        $companyId = $request->user()->company_id;
+        $percentage = (float) $request->percentage;
+        $factor = 1 + ($percentage / 100);
+
+        $batches = \DB::table('medicine_batches')
+            ->whereIn('medicine_id', $request->medicine_ids)
+            ->where('company_id', $companyId)
+            ->get();
+
+        $count = 0;
+        foreach ($batches as $batch) {
+            $newPrice = round((float) $batch->selling_price_per_unit * $factor, 2);
+            if ($newPrice <= 0) continue;
+            \DB::table('medicine_batches')
+                ->where('id', $batch->id)
+                ->update(['selling_price_per_unit' => $newPrice]);
+            $count++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} batch prices updated by {$percentage}%.",
+        ]);
+    }
 }

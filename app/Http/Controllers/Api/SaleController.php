@@ -104,7 +104,7 @@ final class SaleController extends Controller
             $medicineIds = collect($request->items)->pluck('medicine_id')->unique();
             $medicines = Medicine::where('company_id', $companyId)
                 ->whereIn('id', $medicineIds)
-                ->with('saltComposition')
+                ->with(['saltComposition', 'manufacturer'])
                 ->get()
                 ->keyBy('id');
 
@@ -341,6 +341,41 @@ final class SaleController extends Controller
                 $saleItem['sale_id'] = $sale->id;
             }
             DB::table('sale_items')->insert($saleItems);
+
+            // Auto-write narcotics register for Schedule X items
+            $scheduleXItems = array_filter($saleItems, function ($si) use ($medicines) {
+                $med = $medicines->get($si['medicine_id']);
+                return $med && $med->schedule_type === \App\Enums\ScheduleType::X;
+            });
+            if (!empty($scheduleXItems) && $request->customer_id) {
+                $prescription = $request->prescription_id
+                    ? \App\Models\Prescription::find($request->prescription_id)
+                    : null;
+                $customer = \App\Models\Customer::find($request->customer_id);
+                $customerName = $customer?->name ?? 'Unknown';
+                $customerAddress = $customer?->address ?? '';
+                $doctorName = $prescription?->doctor_name ?? $request->input('doctor_name', '');
+                $rxNumber = $prescription?->prescription_number ?? ($request->input('prescription_number', 'N/A'));
+                $balance = 0;
+
+                foreach ($scheduleXItems as $si) {
+                    \DB::table('narcotics_register')->insert([
+                        'company_id' => $companyId,
+                        'outlet_id' => $outletId,
+                        'sale_id' => $sale->id,
+                        'medicine_id' => $si['medicine_id'],
+                        'batch_id' => $si['batch_id'],
+                        'patient_name' => $customerName,
+                        'patient_address' => $customerAddress,
+                        'doctor_name' => $doctorName,
+                        'prescription_number' => $rxNumber,
+                        'quantity' => (float) $si['quantity'],
+                        'balance' => $balance,
+                        'dispensed_by' => $user->id,
+                        'created_at' => now(),
+                    ]);
+                }
+            }
 
             // Process payments
             $payments = $request->payments ?? [];

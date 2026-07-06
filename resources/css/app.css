@@ -107,3 +107,34 @@
     --color-warning-500: oklch(0.72 0.15 80);
     --color-warning-600: oklch(0.65 0.14 80);
 }
+
+.thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.70 0.005 260) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(0.70 0.005 260);
+    border-radius: 3px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0.005 260);
+}
+
+@media (prefers-color-scheme: dark) {
+    .thin-scrollbar {
+        scrollbar-color: oklch(0.40 0.005 260) transparent;
+    }
+    .thin-scrollbar::-webkit-scrollbar-thumb {
+        background: oklch(0.40 0.005 260);
+    }
+    .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: oklch(0.50 0.005 260);
+    }
+}

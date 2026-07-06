@@ -55,6 +55,34 @@ export default function SuperAdminDashboardPage() {
                 ))}
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-xs font-medium uppercase text-text-muted">Expiring in 7 days</p>
+                        <p className="text-xl font-bold text-warning-600">{dashboard?.expiring_soon_7 ?? 0}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-xs font-medium uppercase text-text-muted">Expiring in 14 days</p>
+                        <p className="text-xl font-bold text-warning-600">{dashboard?.expiring_soon_14 ?? 0}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-xs font-medium uppercase text-text-muted">Expiring in 30 days</p>
+                        <p className="text-xl font-bold text-warning-600">{dashboard?.expiring_soon_30 ?? 0}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <p className="text-xs font-medium uppercase text-text-muted">Churn Rate</p>
+                        <p className="text-xl font-bold text-danger-600">{dashboard?.churn_rate ?? 0}%</p>
+                        <p className="text-xs text-text-muted">{dashboard?.cancelled_this_month ?? 0} cancelled this month</p>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>

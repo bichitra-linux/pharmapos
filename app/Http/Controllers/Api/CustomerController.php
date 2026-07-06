@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCustomerRequest;
+use App\Models\CreditLedger;
 use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class CustomerController extends Controller
 {
@@ -151,5 +153,134 @@ final class CustomerController extends Controller
                 'prescriptions' => $prescriptions,
             ],
         ]);
+    }
+
+    public function creditLend(Request $request, Customer $customer): JsonResponse
+    {
+        if ($customer->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'sale_id' => 'nullable|exists:sales,id',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        $amount = (float) $request->amount;
+
+        return DB::transaction(function () use ($request, $customer, $amount) {
+            $customer->lockForUpdate()->fresh();
+            $balanceAfter = (float) $customer->total_dues + $amount;
+
+            CreditLedger::create([
+                'company_id' => $customer->company_id,
+                'customer_id' => $customer->id,
+                'sale_id' => $request->sale_id,
+                'type' => 'debit',
+                'amount' => $amount,
+                'balance_after' => $balanceAfter,
+                'note' => $request->note,
+                'recorded_by' => $request->user()->id,
+            ]);
+
+            $customer->increment('total_dues', $amount);
+
+            return $this->success([
+                'customer' => $customer->fresh(),
+                'balance' => $balanceAfter,
+            ], 'Credit recorded.');
+        });
+    }
+
+    public function creditReceive(Request $request, Customer $customer): JsonResponse
+    {
+        if ($customer->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'nullable|string|max:50',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        $amount = (float) $request->amount;
+
+        return DB::transaction(function () use ($request, $customer, $amount) {
+            $customer->lockForUpdate()->fresh();
+            $newDues = max(0, (float) $customer->total_dues - $amount);
+            $balanceAfter = $newDues;
+
+            CreditLedger::create([
+                'company_id' => $customer->company_id,
+                'customer_id' => $customer->id,
+                'type' => 'credit',
+                'amount' => $amount,
+                'payment_method' => $request->payment_method,
+                'balance_after' => $balanceAfter,
+                'note' => $request->note,
+                'recorded_by' => $request->user()->id,
+            ]);
+
+            $customer->decrement('total_dues', $amount);
+
+            return $this->success([
+                'customer' => $customer->fresh(),
+                'balance' => max(0, (float) $customer->fresh()->total_dues),
+            ], 'Payment received.');
+        });
+    }
+
+    public function creditLedger(Request $request, Customer $customer): JsonResponse
+    {
+        if ($customer->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
+        $ledger = $customer->creditLedger()
+            ->with('recordedBy:id,name')
+            ->latest()
+            ->paginate($request->get('per_page', 25));
+
+        return $this->paginated($ledger);
+    }
+
+    public function creditSummary(Request $request, Customer $customer): JsonResponse
+    {
+        if ($customer->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
+        $lastPayment = $customer->creditLedger()
+            ->where('type', 'credit')
+            ->latest()
+            ->first();
+
+        $oldestDebt = $customer->creditLedger()
+            ->where('type', 'debit')
+            ->oldest()
+            ->first();
+
+        return $this->success([
+            'current_balance' => (float) $customer->total_dues,
+            'credit_limit' => (float) ($customer->credit_limit ?? 0),
+            'is_over_limit' => $customer->credit_limit > 0 && (float) $customer->total_dues > (float) $customer->credit_limit,
+            'last_payment_at' => $lastPayment?->created_at,
+            'oldest_debt_at' => $oldestDebt?->created_at,
+        ]);
+    }
+
+    public function setCreditLimit(Request $request, Customer $customer): JsonResponse
+    {
+        if ($customer->company_id !== $request->user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+
+        $request->validate(['credit_limit' => 'required|numeric|min:0']);
+
+        $customer->update(['credit_limit' => (float) $request->credit_limit]);
+
+        return $this->success($customer->fresh(), 'Credit limit updated.');
     }
 }

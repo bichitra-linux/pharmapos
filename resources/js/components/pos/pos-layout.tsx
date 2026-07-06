@@ -4,6 +4,7 @@ import { ProductGrid } from './product-grid';
 import { Cart } from './cart';
 import { CartSummary } from './cart-summary';
 import { CustomerSelect } from './customer-select';
+import { CustomerHistoryPanel } from './customer-history-panel';
 import { PrescriptionUpload } from './prescription-upload';
 import { HeldSalesDrawer } from './held-sales-drawer';
 import { PosFooter } from './pos-footer';
@@ -125,6 +126,11 @@ export function POSLayout() {
                     <WifiOff className="h-3 w-3" /> Working offline — sales will still process
                 </div>
             )}
+
+            {/* Customer history panel (when customer selected) */}
+            <div className="hidden md:block">
+                <CustomerHistoryPanel />
+            </div>
 
             {/* Main layout */}
             <div className="flex flex-1 overflow-hidden">

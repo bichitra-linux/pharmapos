@@ -53,11 +53,11 @@ export default function ShowPurchase() {
                         Back
                     </Button>
                     <h1 className="text-2xl font-bold">Purchase #{purchase.purchase_number}</h1>
-                    <Badge variant={purchase.status === 'received' ? 'success' : purchase.status === 'cancelled' ? 'destructive' : 'default'}>
+                    <Badge variant={purchase.status === 'received' ? 'success' : purchase.status === 'partial' ? 'warning' : purchase.status === 'cancelled' ? 'destructive' : 'default'}>
                         {purchase.status}
                     </Badge>
                 </div>
-                {(purchase.status === 'ordered' || purchase.status === 'draft') && (
+                {(purchase.status === 'ordered' || purchase.status === 'draft' || purchase.status === 'partial') && (
                     <Button onClick={() => receiveMutation.mutate()} loading={receiveMutation.isPending}>
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Receive GRN
@@ -119,7 +119,17 @@ export default function ShowPurchase() {
                                         <TableCell>{item.batch_number}</TableCell>
                                         <TableCell>{formatDate(item.expiry_date)}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
-                                        <TableCell>{item.received_quantity}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-1.5">
+                                                <span>{item.received_quantity ?? 0}</span>
+                                                {(item.received_quantity ?? 0) < item.quantity && (
+                                                    <Badge variant="warning" className="text-[10px]">Short {item.quantity - (item.received_quantity ?? 0)}</Badge>
+                                                )}
+                                                {(item.received_quantity ?? 0) > item.quantity && (
+                                                    <Badge variant="default" className="text-[10px]">Excess {item.received_quantity - item.quantity}</Badge>
+                                                )}
+                                            </div>
+                                        </TableCell>
                                         <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                                         <TableCell>{formatCurrency(item.total_amount)}</TableCell>
                                     </TableRow>

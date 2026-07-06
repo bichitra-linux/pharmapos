@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             MedicineCategorySeeder::class,
             ManufacturerSeeder::class,
             SuperAdminSeeder::class,
+            LandingPageSeeder::class,
             DummyDataSeeder::class,
         ]);
     }

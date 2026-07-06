@@ -29,12 +29,37 @@ export const customersService = {
     },
 
     getHistory: async (id: number, params?: Record<string, string | number>) => {
-        const res = await api.get(`/customers/${id}/history`, { params });
-        return extractPaginatedData<Sale>(res.data);
+        const res = await api.get<ApiResponse<{ customer: Customer; sales: any; prescriptions: any[] }>>(`/customers/${id}/history`, { params });
+        return res.data;
     },
 
     search: async (query: string) => {
         const res = await api.get('/customers', { params: { search: query, per_page: 10 } });
         return extractPaginatedData<Customer>(res.data);
+    },
+
+    creditLend: async (id: number, amount: number, note?: string) => {
+        const res = await api.post(`/customers/${id}/credit-lend`, { amount, note });
+        return res.data;
+    },
+
+    creditReceive: async (id: number, amount: number, paymentMethod?: string, note?: string) => {
+        const res = await api.post(`/customers/${id}/credit-receive`, { amount, payment_method: paymentMethod, note });
+        return res.data;
+    },
+
+    getCreditLedger: async (id: number) => {
+        const res = await api.get(`/customers/${id}/credit-ledger`);
+        return extractPaginatedData<Record<string, unknown>>(res.data);
+    },
+
+    getCreditSummary: async (id: number) => {
+        const res = await api.get(`/customers/${id}/credit-summary`);
+        return res.data;
+    },
+
+    setCreditLimit: async (id: number, creditLimit: number) => {
+        const res = await api.post(`/customers/${id}/credit-limit`, { credit_limit: creditLimit });
+        return res.data;
     },
 };

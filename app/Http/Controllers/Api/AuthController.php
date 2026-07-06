@@ -175,4 +175,43 @@ final class AuthController extends Controller
             'message' => 'Password changed successfully.',
         ]);
     }
+
+    public function outlets(Request $request): JsonResponse
+    {
+        $outlets = Outlet::where('company_id', $request->user()->company_id)
+            ->where('is_active', true)
+            ->get(['id', 'name', 'address', 'is_main_outlet']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $outlets,
+        ]);
+    }
+
+    public function switchOutlet(Request $request): JsonResponse
+    {
+        $request->validate([
+            'outlet_id' => 'required|exists:outlets,id',
+        ]);
+
+        $user = $request->user();
+        $outlet = Outlet::where('id', $request->outlet_id)
+            ->where('company_id', $user->company_id)
+            ->first();
+
+        if (!$outlet) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Outlet not found.',
+            ], 404);
+        }
+
+        $user->update(['outlet_id' => $outlet->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Switched to {$outlet->name}.",
+            'data' => $user->fresh()->load('outlet'),
+        ]);
+    }
 }

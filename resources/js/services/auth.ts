@@ -51,4 +51,14 @@ export const authService = {
         const res = await api.put<ApiResponse<null>>('/auth/password', data);
         return res.data;
     },
+
+    getOutlets: async () => {
+        const res = await api.get<ApiResponse<{ id: number; name: string; address: string; is_main_outlet: boolean }[]>>('/auth/outlets');
+        return res.data;
+    },
+
+    switchOutlet: async (outletId: number) => {
+        const res = await api.put<ApiResponse<User>>('/auth/active-outlet', { outlet_id: outletId });
+        return res.data;
+    },
 };

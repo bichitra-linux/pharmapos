@@ -18,5 +18,8 @@ export const inventoryService = {
         return res.data;
     },
 
-
+    getReorderSuggestions: async () => {
+        const res = await api.get<ApiResponse<Record<string, { id: number; brand_name: string; generic_name: string; current_stock: number; reorder_level: number; supplier_name: string | null }[]>>>('/inventory/reorder-suggestions');
+        return res.data;
+    },
 };

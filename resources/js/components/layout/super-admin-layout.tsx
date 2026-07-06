@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -8,11 +8,14 @@ import {
     DollarSign,
     Settings,
     Server,
+    Layout,
+    ClipboardList,
     ChevronLeft,
     Shield,
     LogOut,
     User,
     ChevronDown,
+    AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSuperAdminStore } from '@/stores/superAdminStore';
@@ -25,6 +28,8 @@ const navItems = [
     { to: '/super-admin/plans', icon: CreditCard, label: 'Plans' },
     { to: '/super-admin/subscriptions', icon: Repeat, label: 'Subscriptions' },
     { to: '/super-admin/payments', icon: DollarSign, label: 'Payments' },
+    { to: '/super-admin/landing', icon: Layout, label: 'Landing Page' },
+    { to: '/super-admin/audit-logs', icon: ClipboardList, label: 'Audit Logs' },
     { to: '/super-admin/settings', icon: Settings, label: 'Settings' },
     { to: '/super-admin/system', icon: Server, label: 'System' },
 ];
@@ -35,12 +40,27 @@ export function SuperAdminLayout() {
     const user = useSuperAdminStore((s) => s.user);
     const logoutStore = useSuperAdminStore((s) => s.logout);
     const navigate = useNavigate();
+    const [systemDegraded, setSystemDegraded] = useState(false);
+    const healthInterval = useRef<any>(null);
+
+    useEffect(() => {
+        const check = async () => {
+            try {
+                const res = await superAdminService.getHealth();
+                setSystemDegraded(!res.data?.status || res.data.status !== 'healthy');
+            } catch {
+                setSystemDegraded(true);
+            }
+        };
+        check();
+        healthInterval.current = setInterval(check, 30000);
+        return () => { if (healthInterval.current) clearInterval(healthInterval.current); };
+    }, []);
 
     const handleLogout = async () => {
         try {
             await superAdminService.logout();
         } catch {
-            // ignore error, still logout locally
         }
         logoutStore();
         navigate('/super-admin/login', { replace: true });
@@ -48,10 +68,17 @@ export function SuperAdminLayout() {
 
     return (
         <div className="min-h-screen bg-surface-muted">
+            {systemDegraded && (
+                <div className="flex items-center justify-center gap-2 bg-danger-600 px-4 py-2 text-sm text-white">
+                    <AlertTriangle className="h-4 w-4" />
+                    System degraded — some services may be unavailable
+                </div>
+            )}
             <aside
                 className={cn(
                     'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-primary-900/30 bg-gradient-to-b from-primary-950 to-primary-950/90 transition-all duration-300',
-                    sidebarOpen ? 'w-64' : 'w-16'
+                    sidebarOpen ? 'w-64' : 'w-16',
+                    systemDegraded && 'top-10'
                 )}
             >
                 <div className="flex h-16 items-center justify-between border-b border-primary-800/30 px-4">
@@ -115,7 +142,7 @@ export function SuperAdminLayout() {
 
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+                    className={`fixed inset-0 z-30 bg-black/40 lg:hidden ${systemDegraded ? 'mt-10' : ''}`}
                     onClick={toggleSidebar}
                     onKeyDown={(e) => e.key === 'Escape' && toggleSidebar()}
                     tabIndex={-1}
@@ -127,10 +154,11 @@ export function SuperAdminLayout() {
                 className={cn(
                     'transition-all duration-300',
                     'ml-0 lg:ml-16',
-                    sidebarOpen && 'lg:ml-64'
+                    sidebarOpen && 'lg:ml-64',
+                    systemDegraded && 'mt-10'
                 )}
             >
-                <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
+                <header className={`sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6 ${systemDegraded ? 'top-10' : ''}`}>
                     <div className="flex items-center gap-3">
                         <div className="rounded-md bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700">
                             Platform Management

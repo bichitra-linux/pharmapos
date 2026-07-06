@@ -23,7 +23,9 @@ export default function CustomersIndex() {
         { key: 'name', header: 'Name', sortable: true },
         { key: 'phone', header: 'Phone' },
         { key: 'email', header: 'Email' },
-        { key: 'total_dues', header: 'Dues', render: (item) => formatCurrency(item.total_dues) },
+        { key: 'total_dues', header: 'Due', render: (item) => (
+            <span className={item.total_dues > 0 ? 'text-warning-600 font-medium' : ''}>{formatCurrency(item.total_dues)}</span>
+        )},
         { key: 'loyalty_points', header: 'Points', render: (item) => item.loyalty_points.toLocaleString() },
     ];
 

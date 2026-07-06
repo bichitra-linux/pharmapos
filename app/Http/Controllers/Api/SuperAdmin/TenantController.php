@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Outlet;
 use App\Models\PaymentMethod;
@@ -202,5 +203,70 @@ class TenantController extends Controller
         $tenant->delete();
 
         return $this->success(null, 'Tenant deleted successfully.');
+    }
+
+    public function impersonate(Request $request, Company $tenant): JsonResponse
+    {
+        $user = $tenant->users()->where('is_active', true)->first();
+
+        if (!$user) {
+            return $this->error('No active user found in this tenant.', 404);
+        }
+
+        $token = $user->createToken('impersonation-' . $request->user()->id, ['*'], now()->addHours(1))->plainTextToken;
+
+        AuditLog::create([
+            'company_id' => $tenant->id,
+            'user_id' => $user->id,
+            'action' => 'super_admin_impersonated',
+            'model_type' => 'Company',
+            'model_id' => $tenant->id,
+            'new_values' => [
+                'super_admin_id' => $request->user()->id,
+                'super_admin_name' => $request->user()->name,
+                'target_user' => $user->email,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
+        ]);
+
+        return $this->success([
+            'token' => $token,
+            'user' => $user->load('outlet'),
+            'tenant' => $tenant->only(['id', 'name', 'slug']),
+            'expires_at' => now()->addHours(1),
+        ], 'Impersonation token generated.');
+    }
+
+    public function usage(Company $tenant): JsonResponse
+    {
+        $usage = [
+            'users_count' => $tenant->users()->withoutGlobalScopes()->count(),
+            'outlets_count' => $tenant->outlets()->withoutGlobalScopes()->count(),
+            'medicines_count' => $tenant->medicines()->withoutGlobalScopes()->count(),
+            'customers_count' => $tenant->customers()->withoutGlobalScopes()->count(),
+            'sales_this_month' => $tenant->sales()->withoutGlobalScopes()
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count(),
+            'sales_total' => (float) $tenant->sales()->withoutGlobalScopes()
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->sum('total_amount'),
+        ];
+
+        $plan = $tenant->subscriptionPlan;
+
+        if ($plan) {
+            $usage['plan_limit_medicines'] = $plan->max_medicines;
+            $usage['plan_limit_users'] = $plan->max_users;
+            $usage['plan_limit_outlets'] = $plan->max_outlets;
+            $usage['medicines_percent'] = $plan->max_medicines > 0 ? round(($usage['medicines_count'] / $plan->max_medicines) * 100) : 0;
+            $usage['users_percent'] = $plan->max_users > 0 ? round(($usage['users_count'] / $plan->max_users) * 100) : 0;
+            $usage['outlets_percent'] = $plan->max_outlets > 0 ? round(($usage['outlets_count'] / $plan->max_outlets) * 100) : 0;
+        }
+
+        return $this->success($usage);
     }
 }

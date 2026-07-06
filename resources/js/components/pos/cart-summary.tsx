@@ -53,7 +53,8 @@ export function CartSummary() {
 
     const handleHold = useCallback(() => {
         if (items.length === 0) return;
-        const held = { id: Date.now(), items: JSON.parse(JSON.stringify(items)), customer_id: storeState.customer_id, discount_amount: storeState.discount_amount, sale_type: storeState.sale_type, held_at: new Date().toISOString() };
+        const name = window.prompt('Name for this held sale?') || '';
+        const held = { id: Date.now(), name, items: JSON.parse(JSON.stringify(items)), customer_id: storeState.customer_id, discount_amount: storeState.discount_amount, sale_type: storeState.sale_type, held_at: new Date().toISOString() };
         const existing = JSON.parse(localStorage.getItem('pharmapos-held-sales') || '[]');
         existing.push(held);
         localStorage.setItem('pharmapos-held-sales', JSON.stringify(existing));

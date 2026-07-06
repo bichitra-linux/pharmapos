@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCartStore } from '@/stores/cartStore';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Trash2, Play, X } from 'lucide-react';
+import { ShoppingCart, Trash2, Play, X, Pencil } from 'lucide-react';
 
 interface HeldSale {
     id: number;
+    name: string;
     items: any[];
     customer_id: number | null;
     discount_amount: number;
@@ -54,6 +55,15 @@ export function HeldSalesDrawer({ open, onClose }: Props) {
         setHeldSales(filtered);
     }, []);
 
+    const handleRename = useCallback((id: number) => {
+        const newName = window.prompt('Rename this held sale:');
+        if (newName === null) return;
+        const stored = JSON.parse(localStorage.getItem('pharmapos-held-sales') || '[]');
+        const updated = stored.map((s: HeldSale) => s.id === id ? { ...s, name: newName } : s);
+        localStorage.setItem('pharmapos-held-sales', JSON.stringify(updated));
+        setHeldSales(updated);
+    }, []);
+
     if (!open) return null;
 
     return (
@@ -78,10 +88,17 @@ export function HeldSalesDrawer({ open, onClose }: Props) {
                             <div key={sale.id} className="rounded border border-border p-3">
                                 <div className="flex items-start justify-between">
                                     <div>
-                                        <p className="text-sm font-medium">{totalItems} item{totalItems > 1 ? 's' : ''}</p>
+                                        <p className="text-sm font-medium">{sale.name || `${totalItems} item${totalItems > 1 ? 's' : ''}`}</p>
                                         <p className="text-xs text-text-muted">{formatDate(sale.held_at, 'dd/MM/yyyy HH:mm')}</p>
                                     </div>
                                     <div className="flex gap-1">
+                                        <button
+                                            onClick={() => handleRename(sale.id)}
+                                            aria-label="Rename"
+                                            className="rounded p-1 text-text-muted hover:bg-surface-muted"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </button>
                                         <button
                                             onClick={() => handleResume(sale)}
                                             aria-label="Resume sale"

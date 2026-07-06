@@ -22,6 +22,8 @@ import {
     Phone,
     MapPin,
     FileText,
+    Eye,
+    Activity,
 } from 'lucide-react';
 
 export default function SuperAdminTenantShowPage() {
@@ -37,6 +39,13 @@ export default function SuperAdminTenantShowPage() {
         select: (res) => res.data,
     });
 
+    const { data: usage } = useQuery({
+        queryKey: ['super-admin', 'tenants', id, 'usage'],
+        queryFn: () => superAdminService.getTenantUsage(Number(id)),
+        select: (res) => res.data,
+        enabled: !!id,
+    });
+
     const suspendMutation = useMutation({
         mutationFn: (reason: string) => superAdminService.suspendTenant(Number(id), reason),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['super-admin', 'tenants', id] }),
@@ -45,6 +54,18 @@ export default function SuperAdminTenantShowPage() {
     const activateMutation = useMutation({
         mutationFn: () => superAdminService.activateTenant(Number(id)),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['super-admin', 'tenants', id] }),
+    });
+
+    const impersonateMutation = useMutation({
+        mutationFn: () => superAdminService.impersonateTenant(Number(id)),
+        onSuccess: (res) => {
+            const data = res.data;
+            localStorage.setItem('impersonation_token', data.token);
+            localStorage.setItem('impersonation_tenant', JSON.stringify(data.tenant));
+            localStorage.setItem('impersonation_user', JSON.stringify(data.user));
+            localStorage.setItem('impersonation_original_path', window.location.pathname);
+            window.location.href = '/dashboard';
+        },
     });
 
     if (isLoading) return <PageLoader />;
@@ -74,6 +95,9 @@ export default function SuperAdminTenantShowPage() {
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => navigate(`/super-admin/tenants/${id}/edit`)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit
+                    </Button>
+                    <Button variant="outline" onClick={() => impersonateMutation.mutate()} loading={impersonateMutation.isPending}>
+                        <Eye className="mr-2 h-4 w-4" /> Impersonate
                     </Button>
                     {tenant.suspended_at ? (
                         <Button variant="success" onClick={() => activateMutation.mutate()} loading={activateMutation.isPending}>
@@ -175,6 +199,62 @@ export default function SuperAdminTenantShowPage() {
                 </Card>
 
                 <div className="space-y-6">
+                    {usage && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Activity className="h-5 w-5" />
+                                    Usage
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {usage.plan_limit_medicines != null && (
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-text-muted">Medicines</span>
+                                            <span>{usage.medicines_count} / {usage.plan_limit_medicines}</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-surface-muted overflow-hidden">
+                                            <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(Number(usage.medicines_percent) || 0, 100)}%` }} />
+                                        </div>
+                                    </div>
+                                )}
+                                {usage.plan_limit_users != null && (
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-text-muted">Users</span>
+                                            <span>{usage.users_count} / {usage.plan_limit_users}</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-surface-muted overflow-hidden">
+                                            <div className={`h-full rounded-full ${(Number(usage.users_percent) || 0) > 80 ? 'bg-warning-500' : 'bg-primary-500'}`} style={{ width: `${Math.min(Number(usage.users_percent) || 0, 100)}%` }} />
+                                        </div>
+                                    </div>
+                                )}
+                                {usage.plan_limit_outlets != null && (
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-text-muted">Outlets</span>
+                                            <span>{usage.outlets_count} / {usage.plan_limit_outlets}</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-surface-muted overflow-hidden">
+                                            <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(Number(usage.outlets_percent) || 0, 100)}%` }} />
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="border-t border-border pt-3 mt-3 grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <p className="text-text-muted">Customers</p>
+                                        <p className="font-medium">{usage.customers_count}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-muted">Sales This Month</p>
+                                        <p className="font-medium">{usage.sales_this_month}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">

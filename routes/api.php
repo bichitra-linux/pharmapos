@@ -37,6 +37,8 @@ use App\Http\Controllers\Api\SuperAdmin\PaymentController as SuperAdminPaymentCo
 use App\Http\Controllers\Api\SuperAdmin\SettingController as SuperAdminSettingController;
 use App\Http\Controllers\Api\SuperAdmin\SystemController as SuperAdminSystemController;
 use App\Http\Controllers\Api\SuperAdmin\PaymentGatewayController as SuperAdminPaymentGatewayController;
+use App\Http\Controllers\Api\SuperAdmin\LandingPageController as SuperAdminLandingPageController;
+use App\Http\Controllers\Public\LandingPageController as PublicLandingPageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,9 +61,11 @@ Route::prefix('super-admin')->group(function () {
 
         Route::get('dashboard', [SuperAdminDashboardController::class, 'index']);
 
-        Route::apiResource('tenants', SuperAdminTenantController::class);
+        Route::get('tenants/{tenant}/usage', [SuperAdminTenantController::class, 'usage']);
+        Route::post('tenants/{tenant}/impersonate', [SuperAdminTenantController::class, 'impersonate']);
         Route::patch('tenants/{tenant}/suspend', [SuperAdminTenantController::class, 'suspend']);
         Route::patch('tenants/{tenant}/activate', [SuperAdminTenantController::class, 'activate']);
+        Route::apiResource('tenants', SuperAdminTenantController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
         Route::apiResource('plans', SuperAdminPlanController::class);
         Route::patch('plans/{plan}/toggle', [SuperAdminPlanController::class, 'toggle']);
@@ -79,12 +83,22 @@ Route::prefix('super-admin')->group(function () {
         Route::get('system/health', [SuperAdminSystemController::class, 'health']);
         Route::post('system/clear-cache', [SuperAdminSystemController::class, 'clearCache']);
 
+        // Audit logs
+        Route::get('audit-logs', [SuperAdminDashboardController::class, 'auditLogs']);
+
         // Payment Gateways
         Route::get('payment-gateways', [SuperAdminPaymentGatewayController::class, 'index']);
         Route::post('payment-gateways', [SuperAdminPaymentGatewayController::class, 'store']);
         Route::put('payment-gateways/{gateway}', [SuperAdminPaymentGatewayController::class, 'update']);
         Route::patch('payment-gateways/{gateway}/toggle', [SuperAdminPaymentGatewayController::class, 'toggle']);
         Route::post('payment-gateways/{gateway}/test', [SuperAdminPaymentGatewayController::class, 'test']);
+
+        // Landing page management
+        Route::get('landing', [SuperAdminLandingPageController::class, 'show']);
+        Route::put('landing', [SuperAdminLandingPageController::class, 'update']);
+        Route::post('landing/publish', [SuperAdminLandingPageController::class, 'publish']);
+        Route::get('landing/revisions', [SuperAdminLandingPageController::class, 'revisions']);
+        Route::post('landing/revisions/{revision}/restore', [SuperAdminLandingPageController::class, 'restore']);
     });
 });
 
@@ -95,6 +109,10 @@ Route::post('auth/register', [AuthController::class, 'register'])->middleware('t
 // Payment callbacks (public - called by payment gateways)
 Route::post('payments/callback/{gateway}', [PaymentController::class, 'callback'])->middleware('throttle:20,1');
 
+// Public landing page data
+Route::get('public/stats', [PublicLandingPageController::class, 'stats']);
+Route::get('public/plans', [PublicLandingPageController::class, 'plans']);
+
 // Protected routes
 Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:120,1'])->group(function (): void {
 
@@ -103,6 +121,8 @@ Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::put('auth/profile', [AuthController::class, 'updateProfile']);
     Route::put('auth/password', [AuthController::class, 'changePassword']);
+    Route::get('auth/outlets', [AuthController::class, 'outlets']);
+    Route::put('auth/active-outlet', [AuthController::class, 'switchOutlet']);
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index']);
@@ -120,6 +140,7 @@ Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:
     // Medicines
     Route::get('medicines/search', [MedicineController::class, 'search']);
     Route::post('medicines/import', [MedicineController::class, 'import']);
+    Route::post('medicines/bulk-price-update', [MedicineController::class, 'bulkPriceUpdate'])->middleware('permission:manage_medicines');
     Route::apiResource('medicines', MedicineController::class)->middleware('permission:manage_medicines');
     Route::get('medicines/{medicine}/batches', [MedicineController::class, 'batches']);
     Route::get('medicines/{medicine}/substitutes', [MedicineController::class, 'substitutes']);
@@ -152,6 +173,11 @@ Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:
     // Customers
     Route::get('customers/search', [CustomerController::class, 'search']);
     Route::get('customers/{customer}/history', [CustomerController::class, 'history']);
+    Route::post('customers/{customer}/credit-lend', [CustomerController::class, 'creditLend'])->middleware('permission:manage_customers');
+    Route::post('customers/{customer}/credit-receive', [CustomerController::class, 'creditReceive'])->middleware('permission:manage_customers');
+    Route::get('customers/{customer}/credit-ledger', [CustomerController::class, 'creditLedger'])->middleware('permission:manage_customers');
+    Route::get('customers/{customer}/credit-summary', [CustomerController::class, 'creditSummary']);
+    Route::post('customers/{customer}/credit-limit', [CustomerController::class, 'setCreditLimit'])->middleware('permission:manage_customers');
     Route::apiResource('customers', CustomerController::class)->middleware('permission:manage_customers');
 
     // Suppliers
@@ -172,6 +198,7 @@ Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:
     Route::get('inventory/stock', [InventoryController::class, 'stock'])->middleware('permission:view_inventory');
     Route::get('inventory/adjustments', [InventoryController::class, 'adjustments'])->middleware('permission:manage_inventory');
     Route::post('inventory/adjustments', [InventoryController::class, 'storeAdjustment'])->middleware('permission:manage_inventory');
+    Route::get('inventory/reorder-suggestions', [InventoryController::class, 'reorderSuggestions'])->middleware('permission:view_inventory');
 
     // Payment Methods
     Route::get('payment-methods', [PaymentMethodController::class, 'index']);

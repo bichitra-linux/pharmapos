@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { superAdminService } from '@/services/super-admin';
@@ -24,6 +24,8 @@ import {
     PlayCircle,
     Trash2,
     ChevronDown,
+    Download,
+    CheckSquare,
 } from 'lucide-react';
 
 export default function SuperAdminTenantsPage() {
@@ -35,6 +37,7 @@ export default function SuperAdminTenantsPage() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [suspendId, setSuspendId] = useState<number | null>(null);
     const [suspendReason, setSuspendReason] = useState('');
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     const { data, isLoading } = useQuery({
         queryKey: ['super-admin', 'tenants', search, status, page],
@@ -68,6 +71,37 @@ export default function SuperAdminTenantsPage() {
     const handleSuspend = (id: number) => {
         setSuspendId(id);
         setSuspendReason('');
+    };
+
+    const handleBulkSuspend = useCallback(() => {
+        const reason = window.prompt('Suspension reason for selected tenants:');
+        if (!reason) return;
+        selectedIds.forEach((id) => suspendMutation.mutate({ id, reason }));
+        setSelectedIds([]);
+    }, [selectedIds, suspendMutation]);
+
+    const handleExportCSV = useCallback(() => {
+        if (!data?.data) return;
+        const headers = ['Name', 'Email', 'Phone', 'Status', 'Created'];
+        const rows = data.data.map((t) => [
+            t.name, t.email, t.phone || '',
+            t.suspended_at ? 'Suspended' : t.is_active ? 'Active' : 'Inactive',
+            t.created_at,
+        ]);
+        const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'tenants.csv'; a.click();
+        URL.revokeObjectURL(url);
+    }, [data?.data]);
+
+    const toggleSelect = (id: number) => {
+        setSelectedIds((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+    };
+
+    const toggleSelectAll = () => {
+        const ids = data?.data?.map((t) => t.id) ?? [];
+        setSelectedIds((prev) => prev.length === ids.length ? [] : ids);
     };
 
     const statusOptions = [
@@ -117,12 +151,36 @@ export default function SuperAdminTenantsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
+                    {selectedIds.length > 0 && (
+                        <div className="mb-4 flex items-center gap-2 rounded-lg bg-primary-50 px-4 py-2 text-sm">
+                            <CheckSquare className="h-4 w-4 text-primary-600" />
+                            <span className="font-medium text-primary-700">{selectedIds.length} selected</span>
+                            <Button variant="outline" size="sm" onClick={handleBulkSuspend} className="ml-2">
+                                <PauseCircle className="mr-1.5 h-4 w-4" /> Suspend All
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                                <Download className="mr-1.5 h-4 w-4" /> Export CSV
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="ml-auto">
+                                Clear
+                            </Button>
+                        </div>
+                    )}
+
                     {data?.data && data.data.length > 0 ? (
                         <>
                             <div className="overflow-visible">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-10">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.length === (data?.data?.length ?? 0)}
+                                                onChange={toggleSelectAll}
+                                                className="rounded border-border"
+                                            />
+                                        </TableHead>
                                         <TableHead>Name</TableHead>
                                         <TableHead>Email</TableHead>
                                         <TableHead>Plan</TableHead>
@@ -135,6 +193,14 @@ export default function SuperAdminTenantsPage() {
                                 <TableBody>
                                     {data.data.map((tenant) => (
                                         <TableRow key={tenant.id}>
+                                            <TableCell>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(tenant.id)}
+                                                    onChange={() => toggleSelect(tenant.id)}
+                                                    className="rounded border-border"
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-medium">{tenant.name}</TableCell>
                                             <TableCell className="text-sm text-text-muted">{tenant.email}</TableCell>
                                             <TableCell>

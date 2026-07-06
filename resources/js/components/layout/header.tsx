@@ -9,11 +9,13 @@ import {
     LogOut,
     Settings,
     ChevronDown,
+    Store,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useAuth } from '@/hooks/useAuth';
+import { authService } from '@/services/auth';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { medicinesService } from '@/services/medicines';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -37,6 +39,27 @@ export function Header() {
         staleTime: 30_000,
         select: (res) => res.data,
     });
+
+    const queryClient = useQueryClient();
+
+    const { data: outletsData } = useQuery({
+        queryKey: ['auth', 'outlets'],
+        queryFn: () => authService.getOutlets(),
+        select: (res) => res.data,
+        staleTime: 60_000,
+    });
+
+    const switchOutletMutation = useMutation({
+        mutationFn: (outletId: number) => authService.switchOutlet(outletId),
+        onSuccess: (res) => {
+            useAuthStore.getState().updateUser({ outlet: res.data.outlet, outlet_id: res.data.outlet_id });
+            queryClient.invalidateQueries();
+        },
+    });
+
+    const [showOutletSwitcher, setShowOutletSwitcher] = useState(false);
+    const outlets = outletsData || [];
+    const outletSwitcherRef = useRef<HTMLDivElement>(null);
 
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
@@ -168,6 +191,41 @@ export function Header() {
                         )}
                     </div>
                 )}
+
+                <div className="relative">
+                    <button
+                        onClick={() => setShowOutletSwitcher(!showOutletSwitcher)}
+                        className="hidden md:flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text-muted hover:bg-surface-muted"
+                        aria-label="Switch outlet"
+                    >
+                        <Store className="h-3.5 w-3.5" />
+                        <span className="max-w-24 truncate">{user?.outlet?.name || 'Outlet'}</span>
+                        <ChevronDown className="h-3 w-3" />
+                    </button>
+                    {showOutletSwitcher && (
+                        <div
+                            ref={outletSwitcherRef}
+                            className="absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg"
+                        >
+                            {outlets.map((o) => (
+                                <button
+                                    key={o.id}
+                                    onClick={() => {
+                                        switchOutletMutation.mutate(o.id);
+                                        setShowOutletSwitcher(false);
+                                    }}
+                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted ${
+                                        o.id === user?.outlet_id ? 'font-medium text-primary-600 bg-primary-50' : ''
+                                    }`}
+                                >
+                                    <Store className="h-4 w-4 shrink-0" />
+                                    <span className="truncate">{o.name}</span>
+                                    {o.is_main_outlet && <span className="text-[10px] text-text-muted ml-auto">Main</span>}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <div className="relative">
                     <button

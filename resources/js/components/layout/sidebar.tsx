@@ -16,6 +16,7 @@ import {
     UserCog,
     ChevronLeft,
     Store,
+    AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/uiStore';
@@ -26,6 +27,7 @@ const navItems = [
     { to: '/pos', icon: ShoppingCart, label: 'POS' },
     { to: '/medicines', icon: Pill, label: 'Medicines' },
     { to: '/inventory', icon: Package, label: 'Inventory' },
+    { to: '/inventory/reorder', icon: AlertTriangle, label: 'Reorder' },
     { to: '/purchases', icon: Truck, label: 'Purchases' },
     { to: '/sales', icon: Receipt, label: 'Sales' },
     { to: '/customers', icon: Users, label: 'Customers' },

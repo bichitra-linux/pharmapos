@@ -16,6 +16,11 @@ export interface PlatformDashboard {
     new_this_month: number;
     mrr: number;
     expiring_soon: number;
+    expiring_soon_7: number;
+    expiring_soon_14: number;
+    expiring_soon_30: number;
+    churn_rate: number;
+    cancelled_this_month: number;
     monthly_revenue: MonthlyRevenue[];
     recent_tenants: TenantSummary[];
 }

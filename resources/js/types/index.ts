@@ -267,7 +267,7 @@ export interface Purchase {
     total: number;
     paid_amount: number;
     due_amount: number;
-    status: 'draft' | 'ordered' | 'received' | 'cancelled';
+    status: 'draft' | 'ordered' | 'partial' | 'received' | 'cancelled';
     grn_number: string | null;
     received_at: string | null;
     notes: string | null;

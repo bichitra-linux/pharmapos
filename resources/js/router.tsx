@@ -20,6 +20,7 @@ const ManufacturersIndex = lazy(() => import('@/pages/medicines/manufacturers/in
 
 const InventoryIndex = lazy(() => import('@/pages/inventory/index'));
 const AdjustmentsPage = lazy(() => import('@/pages/inventory/adjustments'));
+const ReorderPage = lazy(() => import('@/pages/inventory/reorder'));
 
 const PurchasesIndex = lazy(() => import('@/pages/purchases/index'));
 const CreatePurchase = lazy(() => import('@/pages/purchases/create'));
@@ -30,6 +31,7 @@ const ShowSale = lazy(() => import('@/pages/sales/show'));
 
 const CustomersIndex = lazy(() => import('@/pages/customers/index'));
 const CreateEditCustomer = lazy(() => import('@/pages/customers/create'));
+const CustomerShow = lazy(() => import('@/pages/customers/show'));
 
 const SuppliersIndex = lazy(() => import('@/pages/suppliers/index'));
 const CreateEditSupplier = lazy(() => import('@/pages/suppliers/create'));
@@ -62,8 +64,10 @@ const SuperAdminTenantShow = lazy(() => import('@/pages/super-admin/tenants/show
 const SuperAdminPlans = lazy(() => import('@/pages/super-admin/plans/index'));
 const SuperAdminSubscriptions = lazy(() => import('@/pages/super-admin/subscriptions/index'));
 const SuperAdminPayments = lazy(() => import('@/pages/super-admin/payments/index'));
+const SuperAdminLanding = lazy(() => import('@/pages/super-admin/landing/index'));
 const SuperAdminSettings = lazy(() => import('@/pages/super-admin/settings/index'));
 const SuperAdminSystem = lazy(() => import('@/pages/super-admin/system/index'));
+const SuperAdminAuditLogs = lazy(() => import('@/pages/super-admin/audit-logs/index'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
     return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -145,6 +149,7 @@ export const router = createBrowserRouter([
             { path: 'medicines/manufacturers', element: <SuspenseWrapper><ManufacturersIndex /></SuspenseWrapper> },
             { path: 'inventory', element: <SuspenseWrapper><InventoryIndex /></SuspenseWrapper> },
             { path: 'inventory/adjustments', element: <SuspenseWrapper><AdjustmentsPage /></SuspenseWrapper> },
+            { path: 'inventory/reorder', element: <SuspenseWrapper><ReorderPage /></SuspenseWrapper> },
             { path: 'purchases', element: <SuspenseWrapper><PurchasesIndex /></SuspenseWrapper> },
             { path: 'purchases/create', element: <SuspenseWrapper><CreatePurchase /></SuspenseWrapper> },
             { path: 'purchases/:id', element: <SuspenseWrapper><ShowPurchase /></SuspenseWrapper> },
@@ -152,6 +157,7 @@ export const router = createBrowserRouter([
             { path: 'sales/:id', element: <SuspenseWrapper><ShowSale /></SuspenseWrapper> },
             { path: 'customers', element: <SuspenseWrapper><CustomersIndex /></SuspenseWrapper> },
             { path: 'customers/create', element: <SuspenseWrapper><CreateEditCustomer /></SuspenseWrapper> },
+            { path: 'customers/:id', element: <SuspenseWrapper><CustomerShow /></SuspenseWrapper> },
             { path: 'customers/:id/edit', element: <SuspenseWrapper><CreateEditCustomer /></SuspenseWrapper> },
             { path: 'suppliers', element: <SuspenseWrapper><SuppliersIndex /></SuspenseWrapper> },
             { path: 'suppliers/create', element: <SuspenseWrapper><CreateEditSupplier /></SuspenseWrapper> },
@@ -199,6 +205,8 @@ export const router = createBrowserRouter([
             { path: 'plans', element: <SuspenseWrapper><SuperAdminPlans /></SuspenseWrapper> },
             { path: 'subscriptions', element: <SuspenseWrapper><SuperAdminSubscriptions /></SuspenseWrapper> },
             { path: 'payments', element: <SuspenseWrapper><SuperAdminPayments /></SuspenseWrapper> },
+            { path: 'landing', element: <SuspenseWrapper><SuperAdminLanding /></SuspenseWrapper> },
+            { path: 'audit-logs', element: <SuspenseWrapper><SuperAdminAuditLogs /></SuspenseWrapper> },
             { path: 'settings', element: <SuspenseWrapper><SuperAdminSettings /></SuspenseWrapper> },
             { path: 'system', element: <SuspenseWrapper><SuperAdminSystem /></SuspenseWrapper> },
             { path: '*', element: <Navigate to="/super-admin/dashboard" replace /> },

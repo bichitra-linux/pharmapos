@@ -55,4 +55,12 @@ export const medicinesService = {
         );
         return res.data;
     },
+
+    bulkPriceUpdate: async (medicineIds: number[], percentage: number) => {
+        const res = await api.post<ApiResponse<{ message: string }>>('/medicines/bulk-price-update', {
+            medicine_ids: medicineIds,
+            percentage,
+        });
+        return res.data;
+    },
 };

@@ -28,6 +28,7 @@ class Customer extends Model
         'chronic_conditions',
         'loyalty_points',
         'total_dues',
+        'credit_limit',
         'is_active',
     ];
 
@@ -36,6 +37,8 @@ class Customer extends Model
         return [
             'date_of_birth' => 'date',
             'loyalty_points' => 'integer',
+            'total_dues' => 'decimal:2',
+            'credit_limit' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
@@ -58,6 +61,11 @@ class Customer extends Model
     public function prescriptions(): HasMany
     {
         return $this->hasMany(Prescription::class);
+    }
+
+    public function creditLedger(): HasMany
+    {
+        return $this->hasMany(CreditLedger::class);
     }
 
     public function addLoyaltyPoints(int $points): void

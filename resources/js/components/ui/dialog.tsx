@@ -68,10 +68,10 @@ export function Dialog({ open, onClose, children, size = 'md' }: DialogProps) {
     if (!open) return null;
 
     const sizeClasses = {
-        sm: 'max-w-sm',
-        md: 'max-w-lg',
-        lg: 'max-w-2xl',
-        xl: 'max-w-4xl',
+        sm: 'max-w-sm max-h-[90vh]',
+        md: 'max-w-lg max-h-[90vh]',
+        lg: 'max-w-2xl max-h-[90vh]',
+        xl: 'max-w-4xl max-h-[90vh]',
         full: 'max-w-[95vw] max-h-[95vh]',
     };
 
@@ -81,7 +81,7 @@ export function Dialog({ open, onClose, children, size = 'md' }: DialogProps) {
             <div
                 ref={dialogRef}
                 className={cn(
-                    'relative z-50 w-full rounded-lg bg-surface p-6 shadow-xl',
+                    'relative z-50 w-full rounded-lg bg-surface p-6 shadow-xl flex flex-col',
                     sizeClasses[size]
                 )}
             >
@@ -104,7 +104,7 @@ export function DialogDescription({ children, className }: { children: React.Rea
 }
 
 export function DialogContent({ children, className }: { children: React.ReactNode; className?: string }) {
-    return <div className={cn('py-4', className)}>{children}</div>;
+    return <div className={cn('py-4 overflow-y-auto flex-1 min-h-0 thin-scrollbar', className)}>{children}</div>;
 }
 
 export function DialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {

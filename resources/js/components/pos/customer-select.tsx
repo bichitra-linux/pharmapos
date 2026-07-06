@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/stores/cartStore';
 import { customersService } from '@/services/customers';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatCurrency } from '@/lib/utils';
 import type { Customer } from '@/types';
 
 export function CustomerSelect() {
@@ -21,6 +22,14 @@ export function CustomerSelect() {
         select: (res) => res.data,
     });
 
+    const { data: creditSummary } = useQuery({
+        queryKey: ['customers', 'credit-summary', customer_id],
+        queryFn: () => customersService.getCreditSummary(customer_id!),
+        select: (res) => res.data,
+        enabled: !!customer_id,
+        staleTime: 60_000,
+    });
+
     const handleSelect = (customer: Customer) => {
         setCustomer(customer.id);
         setSelectedName(customer.name);
@@ -28,10 +37,20 @@ export function CustomerSelect() {
         setShowResults(false);
     };
 
+    const balance = creditSummary?.current_balance ?? 0;
+    const isOverLimit = creditSummary?.is_over_limit ?? false;
+
     if (customer_id) {
         return (
-            <div className="flex items-center gap-2 rounded-lg bg-success-50 px-3 py-1.5 text-sm text-success-700">
+            <div className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${
+                isOverLimit ? 'bg-danger-50 text-danger-700' : balance > 0 ? 'bg-warning-50 text-warning-700' : 'bg-success-50 text-success-700'
+            }`}>
                 <span>{selectedName || `Customer #${customer_id}`}</span>
+                {balance > 0 && (
+                    <span className="text-xs font-medium">
+                        (owes {formatCurrency(balance)})
+                    </span>
+                )}
                 <button onClick={() => { setCustomer(null); setSelectedName(''); }} aria-label="Clear customer">
                     <X className="h-4 w-4" />
                 </button>

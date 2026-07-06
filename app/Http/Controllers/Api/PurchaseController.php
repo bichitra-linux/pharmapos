@@ -266,7 +266,7 @@ final class PurchaseController extends Controller
             $fullyReceived = $allItems->every(fn ($item) => (float) ($item->received_quantity ?? 0) >= (float) $item->quantity);
 
             $purchase->update([
-                'status' => $fullyReceived ? 'received' : 'draft',
+                'status' => $fullyReceived ? 'received' : 'partial',
             ]);
 
             $purchase->load(['supplier', 'items.medicine']);
