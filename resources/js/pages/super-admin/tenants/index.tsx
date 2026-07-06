@@ -136,6 +136,7 @@ export default function SuperAdminTenantsPage() {
                                         setPage(1);
                                     }}
                                     placeholder="Search by name or email..."
+                                    aria-label="Search tenants"
                                     className="flex h-10 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                                 />
                             </div>
@@ -146,6 +147,7 @@ export default function SuperAdminTenantsPage() {
                                     setStatus(String(val));
                                     setPage(1);
                                 }}
+                                label="Status"
                             />
                         </div>
                     </div>
@@ -178,6 +180,7 @@ export default function SuperAdminTenantsPage() {
                                                 type="checkbox"
                                                 checked={selectedIds.length === (data?.data?.length ?? 0)}
                                                 onChange={toggleSelectAll}
+                                                aria-label="Select all tenants"
                                                 className="rounded border-border"
                                             />
                                         </TableHead>
@@ -198,6 +201,7 @@ export default function SuperAdminTenantsPage() {
                                                     type="checkbox"
                                                     checked={selectedIds.includes(tenant.id)}
                                                     onChange={() => toggleSelect(tenant.id)}
+                                                    aria-label={`Select ${tenant.name}`}
                                                     className="rounded border-border"
                                                 />
                                             </TableCell>
@@ -229,10 +233,11 @@ export default function SuperAdminTenantsPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <DropdownMenu
+                                                    ariaLabel={`Actions for ${tenant.name}`}
                                                     trigger={
-                                                        <button className="rounded p-1 hover:bg-surface-muted">
+                                                        <span className="rounded p-1 hover:bg-surface-muted inline-flex">
                                                             <MoreVertical className="h-4 w-4 text-text-muted" />
-                                                        </button>
+                                                        </span>
                                                     }
                                                 >
                                                     <DropdownMenuItem onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}>

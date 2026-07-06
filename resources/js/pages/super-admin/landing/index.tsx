@@ -47,15 +47,22 @@ export default function SuperAdminLandingPage() {
             setMetaTitle((landing.meta_title as string) ?? '');
             setMetaDescription((landing.meta_description as string) ?? '');
         }
-    }, [landing, sections]);
+    }, [landing]);
+
+    const statusTimeout = (msg: string) => {
+        setStatusMessage(msg);
+        setTimeout(() => setStatusMessage(''), 3000);
+    };
 
     const saveMutation = useMutation({
         mutationFn: (data: { content: { sections: Section[] }; meta_title: string; meta_description: string }) =>
             superAdminService.updateLanding(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['super-admin', 'landing'] });
-            setStatusMessage('Draft saved.');
-            setTimeout(() => setStatusMessage(''), 3000);
+            statusTimeout('Draft saved.');
+        },
+        onError: (err: Error) => {
+            statusTimeout(err.message || 'Save failed.');
         },
     });
 
@@ -63,18 +70,25 @@ export default function SuperAdminLandingPage() {
         mutationFn: () => superAdminService.publishLanding(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['super-admin', 'landing'] });
-            setStatusMessage('Published!');
-            setTimeout(() => setStatusMessage(''), 3000);
+            statusTimeout('Published!');
+        },
+        onError: (err: Error) => {
+            statusTimeout(err.message || 'Publish failed.');
         },
     });
 
     const restoreMutation = useMutation({
         mutationFn: (revisionId: number) => superAdminService.restoreLandingRevision(revisionId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['super-admin', 'landing'] });
-            setSections(null);
-            setStatusMessage('Revision restored.');
-            setTimeout(() => setStatusMessage(''), 3000);
+        onSuccess: (res) => {
+            const page = res.data as Record<string, unknown>;
+            queryClient.setQueryData(['super-admin', 'landing'], res);
+            setSections((page.content as { sections?: Section[] })?.sections ?? []);
+            setMetaTitle((page.meta_title as string) ?? '');
+            setMetaDescription((page.meta_description as string) ?? '');
+            statusTimeout('Revision restored.');
+        },
+        onError: (err: Error) => {
+            statusTimeout(err.message || 'Restore failed.');
         },
     });
 
@@ -96,12 +110,22 @@ export default function SuperAdminLandingPage() {
         );
     };
 
+    const sectionNestedKey: Record<string, string> = {
+        compliance_bar: 'items',
+        module_showcase: 'modules',
+        how_it_works: 'steps',
+        workflow_diagram: 'nodes',
+        faq: 'items',
+        operator_signal: 'attribution_rows',
+    };
+
     const updateNestedItem = (sectionId: string, itemIndex: number, key: string, value: string) => {
         if (!sections) return;
         setSections(
             sections.map((s) => {
                 if (s.id !== sectionId) return s;
-                const items = [...((s.data.items ?? s.data.steps ?? s.data.logos ?? []) as Record<string, unknown>[])];
+                const sourceKey = sectionNestedKey[s.type] ?? 'items';
+                const items = [...((s.data[sourceKey] ?? []) as Record<string, unknown>[])];
                 if (items[itemIndex]) {
                     items[itemIndex] = { ...items[itemIndex], [key]: value };
                 }
@@ -109,8 +133,7 @@ export default function SuperAdminLandingPage() {
                     ...s,
                     data: {
                         ...s.data,
-                        ...(s.data.items ? { items } : {}),
-                        ...(s.data.steps ? { steps: items } : {}),
+                        [sourceKey]: items,
                     },
                 };
             })
@@ -120,12 +143,12 @@ export default function SuperAdminLandingPage() {
     const sectionLabels: Record<string, string> = {
         nav: 'Navigation',
         hero: 'Hero',
-        trusted_by: 'Trusted By',
-        features: 'Features',
+        compliance_bar: 'Compliance Bar',
+        module_showcase: 'Module Showcase',
         how_it_works: 'How It Works',
-        stats: 'Live Stats',
+        workflow_diagram: 'Workflow Diagram',
         pricing: 'Pricing',
-        testimonials: 'Testimonials',
+        operator_signal: 'Operator Signal',
         faq: 'FAQ',
         cta: 'Call To Action',
         footer: 'Footer',
@@ -156,6 +179,7 @@ export default function SuperAdminLandingPage() {
                                 value={(d.subheading as string) ?? ''}
                                 onChange={(e) => updateSection(section.id, 'subheading', e.target.value)}
                                 className="mt-1 flex min-h-[80px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                aria-label="Hero subheading"
                             />
                         </div>
                         <Input label="Primary CTA Text" value={(d.primary_cta_text as string) ?? ''} onChange={(e) => updateSection(section.id, 'primary_cta_text', e.target.value)} />
@@ -164,15 +188,16 @@ export default function SuperAdminLandingPage() {
                         <Input label="Secondary CTA URL" value={(d.secondary_cta_url as string) ?? ''} onChange={(e) => updateSection(section.id, 'secondary_cta_url', e.target.value)} />
                     </div>
                 );
-            case 'features':
+            case 'module_showcase':
                 return (
                     <div className="space-y-3">
                         <Input label="Heading" value={(d.heading as string) ?? ''} onChange={(e) => updateSection(section.id, 'heading', e.target.value)} />
                         <Input label="Subheading" value={(d.subheading as string) ?? ''} onChange={(e) => updateSection(section.id, 'subheading', e.target.value)} />
-                        {(d.items as Record<string, string>[] ?? []).map((item, i) => (
+                        {(d.modules as Record<string, string>[] ?? []).map((item, i) => (
                             <Card key={i}>
                                 <CardContent className="space-y-2 p-4">
-                                    <p className="text-xs font-medium uppercase text-text-muted">Feature {i + 1}</p>
+                                    <p className="text-xs font-medium uppercase text-text-muted">Module {i + 1}</p>
+                                    <Input label="Number" value={item.number ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'number', e.target.value)} />
                                     <Input label="Title" value={item.title ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'title', e.target.value)} />
                                     <div>
                                         <label className="text-sm font-medium">Description</label>
@@ -180,8 +205,23 @@ export default function SuperAdminLandingPage() {
                                             value={item.description ?? ''}
                                             onChange={(e) => updateNestedItem(section.id, i, 'description', e.target.value)}
                                             className="mt-1 flex min-h-[60px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                            aria-label={`Module ${i + 1} description`}
                                         />
                                     </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                );
+            case 'compliance_bar':
+                return (
+                    <div className="space-y-3">
+                        {(d.items as Record<string, string>[] ?? []).map((item, i) => (
+                            <Card key={i}>
+                                <CardContent className="space-y-2 p-4">
+                                    <p className="text-xs font-medium uppercase text-text-muted">Compliance {i + 1}</p>
+                                    <Input label="Label" value={item.label ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'label', e.target.value)} />
+                                    <Input label="Detail" value={item.detail ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'detail', e.target.value)} />
                                 </CardContent>
                             </Card>
                         ))}
@@ -202,6 +242,7 @@ export default function SuperAdminLandingPage() {
                                             value={step.description ?? ''}
                                             onChange={(e) => updateNestedItem(section.id, i, 'description', e.target.value)}
                                             className="mt-1 flex min-h-[60px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                            aria-label={`Step ${i + 1} description`}
                                         />
                                     </div>
                                 </CardContent>
@@ -210,29 +251,36 @@ export default function SuperAdminLandingPage() {
                     </div>
                 );
             case 'stats':
+            case 'workflow_diagram':
                 return (
                     <div className="space-y-3">
                         <Input label="Heading" value={(d.heading as string) ?? ''} onChange={(e) => updateSection(section.id, 'heading', e.target.value)} />
+                        {(d.nodes as Record<string, string>[] ?? []).map((node, i) => (
+                            <Input key={i} label={`Node ${i + 1}`} value={node.label ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'label', e.target.value)} />
+                        ))}
                     </div>
                 );
-            case 'testimonials':
+            case 'operator_signal':
                 return (
                     <div className="space-y-3">
                         <Input label="Heading" value={(d.heading as string) ?? ''} onChange={(e) => updateSection(section.id, 'heading', e.target.value)} />
-                        {(d.items as Record<string, string>[] ?? []).map((item, i) => (
+                        <div>
+                            <label className="text-sm font-medium">Quote</label>
+                            <textarea
+                                value={(d.quote as string) ?? ''}
+                                onChange={(e) => updateSection(section.id, 'quote', e.target.value)}
+                                className="mt-1 flex min-h-[60px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                aria-label="Operator signal quote"
+                            />
+                        </div>
+                        {(d.attribution_rows as Record<string, string>[] ?? []).map((item, i) => (
                             <Card key={i}>
                                 <CardContent className="space-y-2 p-4">
-                                    <p className="text-xs font-medium uppercase text-text-muted">Testimonial {i + 1}</p>
-                                    <div>
-                                        <label className="text-sm font-medium">Quote</label>
-                                        <textarea
-                                            value={item.quote ?? ''}
-                                            onChange={(e) => updateNestedItem(section.id, i, 'quote', e.target.value)}
-                                            className="mt-1 flex min-h-[60px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                                        />
-                                    </div>
-                                    <Input label="Author" value={item.author ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'author', e.target.value)} />
-                                    <Input label="Title" value={item.title ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'title', e.target.value)} />
+                                    <p className="text-xs font-medium uppercase text-text-muted">Attribution {i + 1}</p>
+                                    <Input label="Name" value={item.name ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'name', e.target.value)} />
+                                    <Input label="Pharmacy" value={item.pharmacy ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'pharmacy', e.target.value)} />
+                                    <Input label="Location" value={item.location ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'location', e.target.value)} />
+                                    <Input label="Since" value={item.since ?? ''} onChange={(e) => updateNestedItem(section.id, i, 'since', e.target.value)} />
                                 </CardContent>
                             </Card>
                         ))}
@@ -253,6 +301,7 @@ export default function SuperAdminLandingPage() {
                                             value={item.answer ?? ''}
                                             onChange={(e) => updateNestedItem(section.id, i, 'answer', e.target.value)}
                                             className="mt-1 flex min-h-[60px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                            aria-label={`FAQ ${i + 1} answer`}
                                         />
                                     </div>
                                 </CardContent>
@@ -279,12 +328,12 @@ export default function SuperAdminLandingPage() {
                                 value={(d.description as string) ?? ''}
                                 onChange={(e) => updateSection(section.id, 'description', e.target.value)}
                                 className="mt-1 flex min-h-[60px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                aria-label="Footer description"
                             />
                         </div>
                     </div>
                 );
             case 'pricing':
-            case 'trusted_by':
                 return (
                     <div className="space-y-3">
                         <Input label="Heading" value={String(d.heading ?? '')} onChange={(e) => updateSection(section.id, 'heading', e.target.value)} />
@@ -296,11 +345,8 @@ export default function SuperAdminLandingPage() {
         }
     };
 
-    const previewUrl = landing?.published_at
-        ? '/'
-        : landing?.updated_at
-            ? `/?preview_token=${(landing as Record<string, unknown>).preview_token ?? ''}`
-            : '/';
+    const previewToken = (landing as Record<string, unknown> | undefined)?.preview_token;
+    const previewUrl = previewToken ? `/?preview_token=${previewToken}` : '/';
 
     const handleSave = () => {
         if (!sections) return;
@@ -324,7 +370,7 @@ export default function SuperAdminLandingPage() {
                 <h1 className="text-2xl font-bold">Landing Page Editor</h1>
                 <div className="flex items-center gap-2">
                     {statusMessage && (
-                        <span className="text-sm text-success-600">{statusMessage}</span>
+                        <span className="text-sm text-text">{statusMessage}</span>
                     )}
                     <Button variant="outline" onClick={() => window.open(previewUrl, '_blank')}>
                         <Eye className="mr-2 h-4 w-4" /> Preview
@@ -339,8 +385,8 @@ export default function SuperAdminLandingPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <Input label="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} />
-                <Input label="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
+                <Input label="Meta Title" value={metaTitle} maxLength={255} onChange={(e) => setMetaTitle(e.target.value)} />
+                <Input label="Meta Description" value={metaDescription} maxLength={500} onChange={(e) => setMetaDescription(e.target.value)} />
             </div>
 
             <Card>
@@ -348,8 +394,10 @@ export default function SuperAdminLandingPage() {
                     <CardTitle className="flex items-center gap-2">
                         <Layout className="h-5 w-5" />
                         Sections
-                        {Boolean(landing?.published_at) && (
+                        {(landing as Record<string, unknown> | undefined)?.published_at ? (
                             <Badge variant="success" className="ml-2">Published</Badge>
+                        ) : (
+                            <Badge variant="outline" className="ml-2">Unpublished</Badge>
                         )}
                     </CardTitle>
                 </CardHeader>

@@ -169,7 +169,7 @@ export function POSLayout() {
                         <div className="ml-auto flex w-full max-w-sm flex-col bg-surface shadow-xl">
                             <div className="flex items-center justify-between border-b border-border p-4">
                                 <h2 className="font-semibold">Cart ({itemCount})</h2>
-                                <button onClick={() => setShowCart(false)} className="rounded p-1 hover:bg-surface-muted">
+                                <button onClick={() => setShowCart(false)} className="rounded p-1 hover:bg-surface-muted" aria-label="Close cart">
                                     <X className="h-5 w-5" />
                                 </button>
                             </div>

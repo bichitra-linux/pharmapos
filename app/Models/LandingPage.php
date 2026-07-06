@@ -18,6 +18,7 @@ class LandingPage extends Model
         'meta_title',
         'meta_description',
         'theme_overrides',
+        'preview_token',
         'published_at',
     ];
 

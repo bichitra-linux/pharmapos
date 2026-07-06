@@ -6,15 +6,16 @@ interface DropdownMenuProps {
     trigger: React.ReactNode;
     children: React.ReactNode;
     align?: 'left' | 'right';
+    ariaLabel?: string;
 }
 
-export function DropdownMenu({ trigger, children, align = 'right' }: DropdownMenuProps) {
+export function DropdownMenu({ trigger, children, align = 'right', ariaLabel }: DropdownMenuProps) {
     const [open, setOpen] = React.useState(false);
     const ref = useClickOutside(() => setOpen(false));
 
     return (
         <div ref={ref} className="relative inline-block">
-            <button type="button" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>
+            <button type="button" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open} aria-label={ariaLabel}>
                 {trigger}
             </button>
             {open && (

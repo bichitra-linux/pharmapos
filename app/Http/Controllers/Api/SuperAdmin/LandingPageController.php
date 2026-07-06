@@ -9,6 +9,7 @@ use App\Models\LandingPage;
 use App\Models\LandingPageRevision;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class LandingPageController extends Controller
 {
@@ -18,6 +19,11 @@ class LandingPageController extends Controller
             ['slug' => 'default'],
             ['content' => $this->defaultContent()]
         );
+
+        if (!$page->preview_token) {
+            $page->update(['preview_token' => Str::random(40)]);
+            $page->refresh();
+        }
 
         $page->loadCount('revisions');
 
@@ -37,7 +43,10 @@ class LandingPageController extends Controller
 
         $page->createRevision($request->user()->id);
 
-        $page->update($request->only('content', 'meta_title', 'meta_description', 'theme_overrides'));
+        $page->update([
+            ...$request->only('content', 'meta_title', 'meta_description', 'theme_overrides'),
+            'preview_token' => Str::random(40),
+        ]);
 
         return $this->success($page->fresh(), 'Landing page updated.');
     }
@@ -93,35 +102,36 @@ class LandingPageController extends Controller
                     'data' => [
                         'eyebrow' => 'Made for Nepal Pharmacies',
                         'heading' => 'The pharmacy POS built for Nepal',
-                        'subheading' => 'Batch tracking, prescription management, narcotics register, digital payments — all in one purpose-built system for the Nepali pharmaceutical market.',
+                        'subheading' => 'Batch tracking, prescription management, narcotics register, and digital payments in one purpose-built system for the Nepali pharmaceutical market.',
                         'primary_cta_text' => 'Start Free Trial',
                         'primary_cta_url' => '/register',
                         'secondary_cta_text' => 'See How It Works',
                         'secondary_cta_url' => '#how-it-works',
-                        'trust_bullets' => ['Barcode scanning at counter', 'Schedule H1/X compliance', 'eSewa, Khalti, Fonepay ready'],
+                        'trust_signals' => ['Schedule-aware', 'VAT + PAN invoiced', 'eSewa + Khalti + Fonepay', 'BS + AD dates'],
                     ],
                 ],
                 [
-                    'type' => 'trusted_by',
-                    'id' => 'trusted-by',
+                    'type' => 'compliance_bar',
+                    'id' => 'compliance',
                     'data' => [
-                        'heading' => 'Trusted by pharmacy chains across Nepal',
-                        'logos' => [],
+                        'items' => [
+                            ['label' => 'DDA ready', 'detail' => 'Registers and schedules kept close to the sale.'],
+                            ['label' => 'PAN/VAT', 'detail' => 'Invoices are ready for Nepali accounting.'],
+                            ['label' => 'Schedule H/H1/X', 'detail' => 'Sensitive medicines stay visible.'],
+                            ['label' => 'BS + AD dates', 'detail' => 'Staff can read both calendar systems.'],
+                        ],
                     ],
                 ],
                 [
-                    'type' => 'features',
+                    'type' => 'module_showcase',
                     'id' => 'features',
                     'data' => [
-                        'heading' => 'Everything a pharmacy needs',
-                        'subheading' => 'From batch tracking to government compliance.',
-                        'items' => [
-                            ['icon' => 'package', 'title' => 'Batch & Expiry Tracking', 'description' => 'Track every medicine by batch number, manufacturing date, and expiry. Never sell an expired drug.'],
-                            ['icon' => 'file-text', 'title' => 'Prescription Management', 'description' => 'Upload, validate, and archive prescriptions. Partial dispensing for chronic patients.'],
-                            ['icon' => 'shield', 'title' => 'Narcotics Register', 'description' => 'Digital Schedule X register meeting DDA requirements. Ready for government inspection.'],
-                            ['icon' => 'credit-card', 'title' => 'Nepal Payment Gateways', 'description' => 'eSewa, Khalti, IME Pay, Fonepay, ConnectIPS. All major Nepal wallets.'],
-                            ['icon' => 'file-text', 'title' => 'VAT Compliant Invoicing', 'description' => 'IRD-compliant invoices with PAN, drug license, and 13% VAT breakdown.'],
-                            ['icon' => 'bar-chart', 'title' => 'Reports & Analytics', 'description' => 'Profit & loss, expiry report, dead stock, sales by schedule type.'],
+                        'heading' => 'The organized pharmacy shelf, digitized',
+                        'subheading' => 'Counter work, stock work, and compliance stay in the same flow.',
+                        'modules' => [
+                            ['number' => '01', 'title' => 'Dispense at counter', 'description' => 'Scan, check schedule status, attach prescription, and take payment without switching screens.'],
+                            ['number' => '02', 'title' => 'Track batch inventory', 'description' => 'See expiry, stock, purchase price, selling price, and reorder state before the sale.'],
+                            ['number' => '03', 'title' => 'Keep compliance ready', 'description' => 'Narcotics register, VAT invoices, and audit trails are created as work happens.'],
                         ],
                     ],
                 ],
@@ -138,14 +148,17 @@ class LandingPageController extends Controller
                     ],
                 ],
                 [
-                    'type' => 'stats',
-                    'id' => 'stats',
+                    'type' => 'workflow_diagram',
+                    'id' => 'workflow',
                     'data' => [
-                        'heading' => 'Used by pharmacies across Nepal',
-                        'items' => [
-                            ['label' => 'Prescriptions Dispensed', 'key' => 'prescriptions_dispensed', 'suffix' => '+'],
-                            ['label' => 'Active Pharmacies', 'key' => 'active_pharmacies', 'suffix' => '+'],
-                            ['label' => 'Medicines Tracked', 'key' => 'medicines_tracked', 'suffix' => '+'],
+                        'heading' => 'One line from purchase to report',
+                        'nodes' => [
+                            ['label' => 'Receive purchase'],
+                            ['label' => 'Track expiry'],
+                            ['label' => 'Scan sale'],
+                            ['label' => 'Collect payment'],
+                            ['label' => 'Update ledger'],
+                            ['label' => 'File reports'],
                         ],
                     ],
                 ],
@@ -158,14 +171,13 @@ class LandingPageController extends Controller
                     ],
                 ],
                 [
-                    'type' => 'testimonials',
-                    'id' => 'testimonials',
+                    'type' => 'operator_signal',
+                    'id' => 'operator-signal',
                     'data' => [
-                        'heading' => 'What pharmacists say',
-                        'items' => [
-                            ['quote' => 'PharmaPOS saved us hours of manual narcotics register work. The batch tracking alone is worth it.', 'author' => 'Ram Thapa', 'title' => 'Pharmacist, Kathmandu'],
-                            ['quote' => 'The digital payment integration means our customers can pay with eSewa or Khalti. They love it.', 'author' => 'Sita Sharma', 'title' => 'Owner, Pokhara Pharmacy'],
-                            ['quote' => 'Setting up was incredibly fast. We imported 2,000 medicines from an Excel file in five minutes.', 'author' => 'Anil Gurung', 'title' => 'Manager, Biratnagar'],
+                        'heading' => 'Built for counter speed',
+                        'quote' => 'The safest sale is the one where stock, expiry, prescription, and payment are checked in one place.',
+                        'attribution_rows' => [
+                            ['name' => 'Pharmacist workflow', 'pharmacy' => 'Counter-first dispensing', 'location' => 'Nepal', 'since' => 'Daily use'],
                         ],
                     ],
                 ],

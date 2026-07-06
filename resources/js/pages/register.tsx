@@ -30,17 +30,17 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-surface-muted px-4 py-8">
-            <Card className="w-full max-w-md">
+        <div className="flex min-h-screen items-center justify-center bg-[oklch(0.96_0.007_50)] px-4 py-8 dark:bg-[oklch(0.15_0.015_50)]">
+            <Card className="w-full max-w-2xl border-[oklch(0.88_0.008_50)]">
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
-                        <Store className="h-6 w-6 text-primary-600" />
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[oklch(0.93_0.04_50)]">
+                        <Store className="h-6 w-6 text-[oklch(0.42_0.13_50)]" />
                     </div>
                     <CardTitle className="text-2xl">Create account</CardTitle>
                     <CardDescription>Get started with PharmaPOS</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
                         <Input
                             label="Company Name"
                             value={form.company_name}
@@ -63,6 +63,7 @@ export default function RegisterPage() {
                             placeholder="you@example.com"
                             required
                         />
+                        <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
                         <Input
                             label="Phone"
                             type="tel"
@@ -79,6 +80,7 @@ export default function RegisterPage() {
                             placeholder="••••••••"
                             required
                         />
+                        </div>
                         <Input
                             label="Confirm Password"
                             type="password"
@@ -88,17 +90,17 @@ export default function RegisterPage() {
                             required
                         />
                         {register.isError && (
-                            <p className="text-sm text-danger-600">
+                            <p className="text-sm text-danger-600 sm:col-span-2">
                                 {(register.error as Error)?.message || 'Registration failed'}
                             </p>
                         )}
-                        <Button type="submit" className="w-full" loading={register.isPending}>
+                        <Button type="submit" className="w-full bg-[oklch(0.42_0.13_50)] hover:bg-[oklch(0.55_0.13_50)] sm:col-span-2" loading={register.isPending}>
                             Create account
                         </Button>
                     </form>
                     <p className="mt-4 text-center text-sm text-text-muted">
                         Already have an account?{' '}
-                        <Link to="/login" className="text-primary-600 hover:underline">
+                        <Link to="/login" className="text-[oklch(0.42_0.13_50)] hover:underline">
                             Sign in
                         </Link>
                     </p>

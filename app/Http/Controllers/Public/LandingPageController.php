@@ -6,8 +6,8 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\LandingPage;
+use App\Models\SubscriptionPlan;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class LandingPageController extends Controller
@@ -25,32 +25,24 @@ class LandingPageController extends Controller
         }
 
         $previewToken = request()->query('preview_token');
-        $isPreview = $previewToken && $previewToken === sha1('preview-' . $page->updated_at->timestamp);
+        $isPreview = $previewToken && hash_equals((string) $page->preview_token, (string) $previewToken);
 
         if (!$page->isPublished() && !$isPreview) {
             return redirect('/login');
         }
 
-        return view('landing', ['page' => $page]);
-    }
-
-    public function stats(): JsonResponse
-    {
-        $stats = Cache::remember('landing.stats', 3600, function () {
-            return [
-                'prescriptions_dispensed' => \App\Models\Sale::count(),
-                'active_pharmacies' => \App\Models\Company::whereNull('suspended_at')->where('is_active', true)->count(),
-                'medicines_tracked' => \DB::table('medicines')->count(),
-                'batches_in_stock' => \DB::table('medicine_batches')->where('quantity_in_stock', '>', 0)->count(),
-            ];
+        $plans = Cache::remember('landing.plans', 300, function () {
+            return SubscriptionPlan::where('is_active', true)
+                ->orderBy('price_monthly')
+                ->get(['id', 'name', 'price_monthly', 'price_yearly', 'max_outlets', 'max_users', 'max_medicines']);
         });
 
-        return response()->json(['success' => true, 'data' => $stats]);
+        return view('landing', ['page' => $page, 'plans' => $plans]);
     }
 
     public function plans(): JsonResponse
     {
-        $plans = \App\Models\SubscriptionPlan::where('is_active', true)
+        $plans = SubscriptionPlan::where('is_active', true)
             ->orderBy('price_monthly')
             ->get(['id', 'name', 'price_monthly', 'price_yearly', 'max_outlets', 'max_users', 'max_medicines']);
 

@@ -22,11 +22,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-surface-muted px-4">
-            <Card className="w-full max-w-md">
+        <div className="flex min-h-screen items-center justify-center bg-[oklch(0.96_0.007_50)] px-4 dark:bg-[oklch(0.15_0.015_50)]">
+            <Card className="w-full max-w-md border-[oklch(0.88_0.008_50)]">
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
-                        <Store className="h-6 w-6 text-primary-600" />
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[oklch(0.93_0.04_50)]">
+                        <Store className="h-6 w-6 text-[oklch(0.42_0.13_50)]" />
                     </div>
                     <CardTitle className="text-2xl">Welcome back</CardTitle>
                     <CardDescription>Sign in to your PharmaPOS account</CardDescription>
@@ -66,13 +66,13 @@ export default function LoginPage() {
                                 {(login.error as Error)?.message || 'Invalid credentials'}
                             </p>
                         )}
-                        <Button type="submit" className="w-full" loading={login.isPending}>
+                        <Button type="submit" className="w-full bg-[oklch(0.42_0.13_50)] hover:bg-[oklch(0.55_0.13_50)]" loading={login.isPending}>
                             Sign in
                         </Button>
                     </form>
                     <p className="mt-4 text-center text-sm text-text-muted">
                         Don't have an account?{' '}
-                        <Link to="/register" className="text-primary-600 hover:underline">
+                        <Link to="/register" className="text-[oklch(0.42_0.13_50)] hover:underline">
                             Register
                         </Link>
                     </p>

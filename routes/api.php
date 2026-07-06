@@ -110,7 +110,6 @@ Route::post('auth/register', [AuthController::class, 'register'])->middleware('t
 Route::post('payments/callback/{gateway}', [PaymentController::class, 'callback'])->middleware('throttle:20,1');
 
 // Public landing page data
-Route::get('public/stats', [PublicLandingPageController::class, 'stats']);
 Route::get('public/plans', [PublicLandingPageController::class, 'plans']);
 
 // Protected routes
