@@ -50,7 +50,7 @@ final class CompanyController extends Controller
             'pharmacy_license_number' => 'nullable|string|max:50',
             'pharmacist_name' => 'nullable|string|max:255',
             'pharmacist_registration_number' => 'nullable|string|max:50',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'logo' => 'nullable|image|mimetypes:image/jpeg,image/png|max:2048',
         ]);
 
         $companyId = $request->user()->company_id;

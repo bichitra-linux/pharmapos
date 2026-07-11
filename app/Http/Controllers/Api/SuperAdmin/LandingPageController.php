@@ -7,9 +7,11 @@ namespace App\Http\Controllers\Api\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\LandingPage;
 use App\Models\LandingPageRevision;
+use App\Rules\SafeUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class LandingPageController extends Controller
 {
@@ -38,6 +40,8 @@ class LandingPageController extends Controller
             'meta_description' => 'nullable|string|max:500',
             'theme_overrides' => 'nullable|array',
         ]);
+
+        $this->validateLandingPageUrls($request->input('content', []));
 
         $page = LandingPage::where('slug', 'default')->firstOrFail();
 
@@ -78,6 +82,36 @@ class LandingPageController extends Controller
         $page->update(['content' => $revision->content]);
 
         return $this->success($page->fresh(), 'Revision restored.');
+    }
+
+    private function validateLandingPageUrls(array $content): void
+    {
+        $urlKeys = ['cta_url', 'signin_url', 'logo_url', 'primary_cta_url', 'secondary_cta_url', 'button_url'];
+
+        $extract = function (array $data) use (&$extract, $urlKeys): array {
+            $fails = [];
+
+            foreach ($data as $key => $value) {
+                if (is_array($value)) {
+                    $fails = array_merge($fails, $extract($value));
+                } elseif (in_array($key, $urlKeys, true) && is_string($value)) {
+                    $validator = validator(['value' => $value], ['value' => [new SafeUrl]]);
+                    if ($validator->fails()) {
+                        $fails[] = "content.{$key}: {$value}";
+                    }
+                }
+            }
+
+            return $fails;
+        };
+
+        $fails = $extract($content);
+
+        if ($fails !== []) {
+            throw ValidationException::withMessages([
+                'content' => 'Unsafe URL detected: '.implode('; ', $fails),
+            ]);
+        }
     }
 
     private function defaultContent(): array

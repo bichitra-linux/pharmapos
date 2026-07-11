@@ -5,12 +5,84 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\PaymentGateway;
+use App\Models\Sale;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class PaymentGatewayService
 {
+    /**
+     * Unified initiate — dispatches to the correct gateway.
+     */
+    public function initiate(string $gateway, Sale $sale): array
+    {
+        return match ($gateway) {
+            'esewa' => [
+                'success' => true,
+                'data' => $this->initiateEsewa(
+                    (float) $sale->total_amount,
+                    $sale->invoice_number,
+                    url("/api/payments/callback/esewa"),
+                    url("/api/payments/callback/esewa"),
+                ),
+            ],
+            'khalti' => $this->initiateKhaltiSafe(
+                (float) $sale->total_amount,
+                $sale->invoice_number,
+                "Payment for Invoice {$sale->invoice_number}",
+                url("/api/payments/callback/khalti"),
+            ),
+            'fonepay' => [
+                'success' => true,
+                'data' => $this->initiateFonepay(
+                    (float) $sale->total_amount,
+                    $sale->invoice_number,
+                    "Payment for Invoice {$sale->invoice_number}",
+                ),
+            ],
+            'connectips' => [
+                'success' => true,
+                'data' => $this->initiateConnectIps(
+                    (float) $sale->total_amount,
+                    $sale->invoice_number,
+                    "Payment for Invoice {$sale->invoice_number}",
+                ),
+            ],
+            default => ['success' => false, 'message' => "Unknown gateway: {$gateway}"],
+        };
+    }
+
+    private function initiateKhaltiSafe(float $amount, string $purchaseOrderId, string $productName, string $returnUrl): array
+    {
+        try {
+            return [
+                'success' => true,
+                'data' => $this->initiateKhalti($amount, $purchaseOrderId, $productName, $returnUrl),
+            ];
+        } catch (\RuntimeException $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Unified verify — dispatches to the correct gateway.
+     */
+    public function verify(string $gateway, array $requestData): array
+    {
+        return match ($gateway) {
+            'esewa' => $this->verifyEsewa(
+                $requestData['refId'] ?? '',
+                $requestData['pid'] ?? '',
+                (float) ($requestData['amt'] ?? 0),
+            ),
+            'khalti' => $this->verifyKhalti($requestData['pidx'] ?? ''),
+            'fonepay' => $this->verifyFonepay($requestData),
+            'connectips' => $this->verifyConnectIps($requestData),
+            default => ['success' => false, 'message' => "Unknown gateway: {$gateway}"],
+        };
+    }
+
     /**
      * Initiate eSewa payment.
      */

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Supplier;
 
-final class StoreSupplierRequest extends FormRequest
+final class StoreSupplierRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Supplier::class) ?? false;
     }
 
     public function rules(): array

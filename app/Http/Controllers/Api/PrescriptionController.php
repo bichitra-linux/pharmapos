@@ -15,8 +15,7 @@ final class PrescriptionController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Prescription::where('company_id', $request->user()->company_id)
-            ->with(['customer:id,name,phone']);
+        $query = Prescription::with(['customer:id,name,phone']);
 
         if ($request->filled('customer_id')) {
             $query->where('customer_id', $request->customer_id);
@@ -111,9 +110,7 @@ final class PrescriptionController extends Controller
 
     public function show(Request $request, Prescription $prescription): JsonResponse
     {
-        if ($prescription->company_id !== $request->user()->company_id) {
-            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
-        }
+        $this->authorize('view', $prescription);
 
         $prescription->load(['customer', 'items.medicine']);
 
@@ -125,9 +122,7 @@ final class PrescriptionController extends Controller
 
     public function update(StorePrescriptionRequest $request, Prescription $prescription): JsonResponse
     {
-        if ($prescription->company_id !== $request->user()->company_id) {
-            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
-        }
+        $this->authorize('update', $prescription);
 
         $prescription->update($request->only([
             'customer_id', 'doctor_name', 'prescription_date', 'notes',
@@ -150,9 +145,7 @@ final class PrescriptionController extends Controller
 
     public function dispense(Request $request, Prescription $prescription): JsonResponse
     {
-        if ($prescription->company_id !== $request->user()->company_id) {
-            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
-        }
+        $this->authorize('dispense', $prescription);
 
         $request->validate([
             'items' => 'required|array|min:1',

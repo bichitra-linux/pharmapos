@@ -11,6 +11,11 @@ return new class extends Migration
 {
     private function hasForeignKey(string $table, string $column): bool
     {
+        // SQLite does not have information_schema — skip FK introspection
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return false;
+        }
+
         $conn = Schema::getConnection();
         $schemaName = $conn->getDatabaseName();
         $rows = $conn->select(

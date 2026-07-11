@@ -45,20 +45,23 @@ return new class extends Migration
         });
 
         // Auto-enable piece selling for tablet/capsule dosage forms
-        DB::statement("UPDATE medicines SET allow_piece_selling = 1, piece_unit_label = 'tablet' WHERE dosage_form IN ('tablet', 'capsule')");
-        DB::statement("UPDATE medicines SET piece_unit_label = 'capsule' WHERE dosage_form = 'capsule'");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("UPDATE medicines SET allow_piece_selling = 1, piece_unit_label = 'tablet' WHERE dosage_form IN ('tablet', 'capsule')");
 
-        // Backfill quantity_in_pieces for existing batches: pieces = quantity_in_stock * units_per_pack
-        DB::statement("
-            UPDATE medicine_batches mb
-            JOIN medicines m ON m.id = mb.medicine_id
-            SET mb.quantity_in_pieces = mb.quantity_in_stock * GREATEST(m.units_per_pack, 1)
-        ");
-        DB::statement("
-            UPDATE medicine_batches mb
-            JOIN medicines m ON m.id = mb.medicine_id
-            SET mb.received_pieces = mb.quantity_in_pieces
-        ");
+            DB::statement("UPDATE medicines SET piece_unit_label = 'capsule' WHERE dosage_form = 'capsule'");
+
+            DB::statement("
+                UPDATE medicine_batches mb
+                JOIN medicines m ON m.id = mb.medicine_id
+                SET mb.quantity_in_pieces = mb.quantity_in_stock * GREATEST(m.units_per_pack, 1)
+            ");
+
+            DB::statement("
+                UPDATE medicine_batches mb
+                JOIN medicines m ON m.id = mb.medicine_id
+                SET mb.received_pieces = mb.quantity_in_pieces
+            ");
+        }
     }
 
     public function down(): void

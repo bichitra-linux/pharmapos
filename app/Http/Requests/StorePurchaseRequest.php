@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-final class StorePurchaseRequest extends FormRequest
+final class StorePurchaseRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', \App\Models\Purchase::class) ?? false;
     }
 
     public function rules(): array

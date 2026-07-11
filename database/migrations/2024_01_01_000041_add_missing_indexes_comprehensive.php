@@ -9,6 +9,14 @@ return new class extends Migration
 {
     private function indexExists(string $table, string $indexName): bool
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $result = DB::selectOne(
+                "SELECT COUNT(*) as cnt FROM sqlite_master WHERE type = 'index' AND name = ?",
+                [$indexName]
+            );
+            return $result->cnt > 0;
+        }
+
         $database = DB::getDatabaseName();
         $result = DB::selectOne(
             "SELECT COUNT(*) as cnt FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?",

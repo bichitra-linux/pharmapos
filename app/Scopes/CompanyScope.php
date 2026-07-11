@@ -28,8 +28,10 @@ class CompanyScope implements Scope
                 $user = Auth::guard('sanctum')->user();
             }
 
-            if ($user && $user->company_id) {
-                $builder->where($model->getTable().'.company_id', $user->company_id);
+            $companyId = $user?->company_id ?? config('app.current_company_id');
+
+            if ($companyId) {
+                $builder->where($model->getTable().'.company_id', $companyId);
             }
         } finally {
             self::$resolving = false;

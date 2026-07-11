@@ -16,6 +16,7 @@ final class SetTenantContext
 
         if ($user && method_exists($user, 'company') && $user->company) {
             config(['app.current_company_id' => $user->company_id]);
+            // ponytail: config() not request-scoped; replace with container-scoped driver if Octane
         }
 
         return $next($request);

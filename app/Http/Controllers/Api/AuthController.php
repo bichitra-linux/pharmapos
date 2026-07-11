@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 final class AuthController extends Controller
@@ -24,6 +25,8 @@ final class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            Log::warning('Failed login attempt', ['email' => $request->email, 'reason' => 'invalid_credentials']);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials.',
@@ -31,25 +34,22 @@ final class AuthController extends Controller
         }
 
         if (! $user->is_active) {
+            Log::warning('Failed login attempt', ['email' => $request->email, 'reason' => 'account_deactivated']);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Your account has been deactivated.',
-            ], 403);
+                'message' => 'Invalid credentials.',
+            ], 401);
         }
 
         $company = $user->company;
-        if ($company && ! $company->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Company account is inactive.',
-            ], 403);
-        }
+        if ($company && (! $company->is_active || ($company->subscription_expires_at && $company->subscription_expires_at->isPast()))) {
+            Log::warning('Failed login attempt', ['email' => $request->email, 'reason' => 'company_inactive_or_expired']);
 
-        if ($company && $company->subscription_expires_at && $company->subscription_expires_at->isPast()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Subscription has expired. Please renew.',
-            ], 403);
+                'message' => 'Invalid credentials.',
+            ], 401);
         }
 
         $token = $user->createToken('pharmapos')->plainTextToken;
@@ -120,6 +120,16 @@ final class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully.',
+        ]);
+    }
+
+    public function logoutAll(Request $request): JsonResponse
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out from all devices.',
         ]);
     }
 

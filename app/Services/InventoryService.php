@@ -11,6 +11,7 @@ use App\Models\MedicineBatch;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InventoryService
 {
@@ -163,6 +164,36 @@ class InventoryService
         if (! $batch->is_active) {
             $batch->update(['is_active' => true]);
         }
+    }
+
+    /**
+     * Get reorder suggestions for an outlet.
+     */
+    public function reorderSuggestions(int $outletId): \Illuminate\Support\Collection
+    {
+        return \DB::table('medicine_batches')
+            ->join('medicines', 'medicines.id', '=', 'medicine_batches.medicine_id')
+            ->leftJoin('suppliers', 'suppliers.id', '=', 'medicine_batches.supplier_id')
+            ->where('medicine_batches.outlet_id', $outletId)
+            ->where('medicine_batches.quantity_in_stock', '>', 0)
+            ->whereColumn('medicine_batches.quantity_in_stock', '<=', 'medicine_batches.reorder_level')
+            ->select(
+                'medicines.id',
+                'medicines.brand_name',
+                'medicines.generic_name',
+                'medicines.barcode',
+                'medicines.unit_type',
+                'medicines.units_per_pack',
+                \DB::raw('SUM(medicine_batches.quantity_in_stock) as current_stock'),
+                \DB::raw('MAX(medicine_batches.reorder_level) as reorder_level'),
+                'suppliers.id as supplier_id',
+                'suppliers.name as supplier_name',
+            )
+            ->groupBy('medicines.id', 'medicines.brand_name', 'medicines.generic_name', 'medicines.barcode',
+                'medicines.unit_type', 'medicines.units_per_pack', 'suppliers.id', 'suppliers.name')
+            ->orderBy('current_stock')
+            ->get()
+            ->groupBy(fn ($item) => $item->supplier_name ?? 'Unassigned');
     }
 
     /**

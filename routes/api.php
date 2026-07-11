@@ -113,13 +113,14 @@ Route::post('payments/callback/{gateway}', [PaymentController::class, 'callback'
 Route::get('public/plans', [PublicLandingPageController::class, 'plans']);
 
 // Protected routes
-Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:120,1'])->group(function (): void {
+Route::middleware('auth.tenant')->group(function (): void {
 
     // Auth
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::put('auth/profile', [AuthController::class, 'updateProfile']);
     Route::put('auth/password', [AuthController::class, 'changePassword']);
+    Route::post('auth/logout-all', [AuthController::class, 'logoutAll']);
     Route::get('auth/outlets', [AuthController::class, 'outlets']);
     Route::put('auth/active-outlet', [AuthController::class, 'switchOutlet']);
 
@@ -130,121 +131,103 @@ Route::middleware(['auth:sanctum', 'tenant.active', 'company.active', 'throttle:
     Route::get('dashboard/sales-chart', [DashboardController::class, 'salesChart']);
     Route::get('dashboard/top-medicines', [DashboardController::class, 'topMedicines']);
 
-    // POS Dashboard
+    // POS dashboard (read-only views)
     Route::prefix('pos')->group(function (): void {
         Route::get('stats', [PosController::class, 'stats']);
         Route::get('recent-sales', [PosController::class, 'recentSales']);
     });
 
-    // Medicines
+    // Read-only resource helpers (no permission gate)
     Route::get('medicines/search', [MedicineController::class, 'search']);
     Route::post('medicines/import', [MedicineController::class, 'import']);
-    Route::post('medicines/bulk-price-update', [MedicineController::class, 'bulkPriceUpdate'])->middleware('permission:manage_medicines');
-    Route::apiResource('medicines', MedicineController::class)->middleware('permission:manage_medicines');
     Route::get('medicines/{medicine}/batches', [MedicineController::class, 'batches']);
     Route::get('medicines/{medicine}/substitutes', [MedicineController::class, 'substitutes']);
-
-    // Batches
     Route::get('batches/expiring-soon', [BatchController::class, 'expiringSoon']);
-    Route::apiResource('batches', BatchController::class)->only(['index', 'store', 'show', 'update'])->middleware('permission:manage_inventory');
-
-    // Categories
-    Route::apiResource('categories', MedicineCategoryController::class)->middleware('permission:manage_medicines');
-
-    // Manufacturers
-    Route::apiResource('manufacturers', ManufacturerController::class)->middleware('permission:manage_medicines');
-
-    // Salt Compositions
-    Route::apiResource('salt-compositions', SaltCompositionController::class)->middleware('permission:manage_medicines');
-
-    // Sales
-    Route::get('sales/{sale}/invoice', [SaleController::class, 'invoice']);
-    Route::get('sales/daily-summary', [SaleController::class, 'dailySummary']);
-    Route::apiResource('sales', SaleController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_sales');
-
-    // Sale Returns
-    Route::apiResource('sale-returns', SaleReturnController::class)->only(['index', 'store'])->middleware('permission:manage_sales');
-
-    // Prescriptions
-    Route::post('prescriptions/{prescription}/dispense', [PrescriptionController::class, 'dispense'])->middleware('permission:manage_prescriptions');
-    Route::apiResource('prescriptions', PrescriptionController::class)->middleware('permission:manage_prescriptions');
-
-    // Customers
     Route::get('customers/search', [CustomerController::class, 'search']);
     Route::get('customers/{customer}/history', [CustomerController::class, 'history']);
-    Route::post('customers/{customer}/credit-lend', [CustomerController::class, 'creditLend'])->middleware('permission:manage_customers');
-    Route::post('customers/{customer}/credit-receive', [CustomerController::class, 'creditReceive'])->middleware('permission:manage_customers');
-    Route::get('customers/{customer}/credit-ledger', [CustomerController::class, 'creditLedger'])->middleware('permission:manage_customers');
     Route::get('customers/{customer}/credit-summary', [CustomerController::class, 'creditSummary']);
-    Route::post('customers/{customer}/credit-limit', [CustomerController::class, 'setCreditLimit'])->middleware('permission:manage_customers');
-    Route::apiResource('customers', CustomerController::class)->middleware('permission:manage_customers');
-
-    // Suppliers
     Route::get('suppliers/{supplier}/ledger', [SupplierController::class, 'ledger']);
-    Route::apiResource('suppliers', SupplierController::class)->middleware('permission:manage_purchases');
-
-    // Purchases
-    Route::post('purchases/{purchase}/receive', [PurchaseController::class, 'receive'])->middleware('permission:manage_purchases');
-    Route::apiResource('purchases', PurchaseController::class)->only(['index', 'store', 'show', 'update'])->middleware('permission:manage_purchases');
-
-    // Supplier Payments
-    Route::apiResource('supplier-payments', SupplierPaymentController::class)->only(['index', 'store'])->middleware('permission:manage_purchases');
-
-    // Supplier Returns
-    Route::apiResource('supplier-returns', SupplierReturnController::class)->only(['index', 'store'])->middleware('permission:manage_purchases');
-
-    // Inventory
-    Route::get('inventory/stock', [InventoryController::class, 'stock'])->middleware('permission:view_inventory');
-    Route::get('inventory/adjustments', [InventoryController::class, 'adjustments'])->middleware('permission:manage_inventory');
-    Route::post('inventory/adjustments', [InventoryController::class, 'storeAdjustment'])->middleware('permission:manage_inventory');
-    Route::get('inventory/reorder-suggestions', [InventoryController::class, 'reorderSuggestions'])->middleware('permission:view_inventory');
-
-    // Payment Methods
     Route::get('payment-methods', [PaymentMethodController::class, 'index']);
-
-    // Payments (online gateways)
-    Route::post('payments/esewa', [PaymentController::class, 'initiateEsewa'])->middleware('permission:manage_sales');
-    Route::post('payments/khalti', [PaymentController::class, 'initiateKhalti'])->middleware('permission:manage_sales');
-    Route::post('payments/fonepay', [PaymentController::class, 'initiateFonepay'])->middleware('permission:manage_sales');
-    Route::post('payments/connectips', [PaymentController::class, 'initiateConnectIPS'])->middleware('permission:manage_sales');
-
-    // Reports
-    Route::prefix('reports')->group(function (): void {
-        Route::get('sales', [ReportController::class, 'sales'])->middleware('permission:view_reports');
-        Route::get('purchases', [ReportController::class, 'purchase'])->middleware('permission:view_reports');
-        Route::get('inventory', [ReportController::class, 'inventory'])->middleware('permission:view_reports');
-        Route::get('expiry', [ReportController::class, 'expiry'])->middleware('permission:view_reports');
-        Route::get('profit-loss', [ReportController::class, 'profitLoss'])->middleware('permission:view_reports');
-        Route::get('vat', [ReportController::class, 'vat'])->middleware('permission:view_reports');
-        Route::get('narcotics', [ReportController::class, 'narcotics'])->middleware('permission:view_reports');
-        Route::get('dead-stock', [ReportController::class, 'deadStock'])->middleware('permission:view_reports');
-        Route::get('supplier-due', [ReportController::class, 'supplierDue'])->middleware('permission:view_reports');
-        Route::get('customer-due', [ReportController::class, 'customerDue'])->middleware('permission:view_reports');
-        Route::get('schedule-wise', [ReportController::class, 'scheduleWise'])->middleware('permission:view_reports');
-        Route::get('category-wise', [ReportController::class, 'categoryWise'])->middleware('permission:view_reports');
-    });
-
-    // Narcotics Register
-    Route::apiResource('narcotics-register', NarcoticsRegisterController::class)->only(['index', 'store'])->middleware('permission:manage_prescriptions');
-
-    // Users
-    Route::apiResource('users', UserController::class)->middleware('permission:manage_users');
-
-    // Roles (read-only, built-in only)
     Route::get('roles', [RoleController::class, 'index']);
-
-    // Settings
-    Route::get('settings', [SettingController::class, 'index'])->middleware('permission:manage_settings');
-    Route::put('settings', [SettingController::class, 'update'])->middleware('permission:manage_settings');
-
-    // Company
     Route::get('company', [CompanyController::class, 'show']);
-    Route::put('company', [CompanyController::class, 'update'])->middleware('permission:manage_settings');
-
-    // Subscription
     Route::get('subscriptions/plans', [SubscriptionController::class, 'plans']);
     Route::get('subscriptions/gateways', [SubscriptionController::class, 'gateways']);
     Route::get('subscriptions/status', [SubscriptionController::class, 'status']);
+    Route::get('sales/{sale}/invoice', [SaleController::class, 'invoice']);
+    Route::get('sales/daily-summary', [SaleController::class, 'dailySummary']);
+});
+
+// Permission-gated routes
+Route::middleware('perm.medicines')->group(function (): void {
+    Route::post('medicines/bulk-price-update', [MedicineController::class, 'bulkPriceUpdate']);
+    Route::apiResource('medicines', MedicineController::class);
+    Route::apiResource('categories', MedicineCategoryController::class);
+    Route::apiResource('manufacturers', ManufacturerController::class);
+    Route::apiResource('salt-compositions', SaltCompositionController::class);
+});
+
+Route::middleware('perm.inventory')->group(function (): void {
+    Route::get('inventory/adjustments', [InventoryController::class, 'adjustments']);
+    Route::post('inventory/adjustments', [InventoryController::class, 'storeAdjustment']);
+    Route::apiResource('batches', BatchController::class)->only(['index', 'store', 'show', 'update']);
+});
+
+Route::middleware('perm.sales')->group(function (): void {
+    Route::apiResource('sales', SaleController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('sale-returns', SaleReturnController::class)->only(['index', 'store']);
+    Route::post('payments/{gateway}/initiate', [PaymentController::class, 'initiate']);
+});
+
+Route::middleware('perm.customers')->group(function (): void {
+    Route::post('customers/{customer}/credit-lend', [CustomerController::class, 'creditLend']);
+    Route::post('customers/{customer}/credit-receive', [CustomerController::class, 'creditReceive']);
+    Route::get('customers/{customer}/credit-ledger', [CustomerController::class, 'creditLedger']);
+    Route::post('customers/{customer}/credit-limit', [CustomerController::class, 'setCreditLimit']);
+    Route::apiResource('customers', CustomerController::class);
+});
+
+Route::middleware('perm.purchases')->group(function (): void {
+    Route::apiResource('suppliers', SupplierController::class);
+    Route::post('purchases/{purchase}/receive', [PurchaseController::class, 'receive']);
+    Route::apiResource('purchases', PurchaseController::class)->only(['index', 'store', 'show', 'update']);
+    Route::apiResource('supplier-payments', SupplierPaymentController::class)->only(['index', 'store']);
+    Route::apiResource('supplier-returns', SupplierReturnController::class)->only(['index', 'store']);
+});
+
+Route::middleware('perm.prescriptions')->group(function (): void {
+    Route::post('prescriptions/{prescription}/dispense', [PrescriptionController::class, 'dispense']);
+    Route::apiResource('prescriptions', PrescriptionController::class);
+    Route::apiResource('narcotics-register', NarcoticsRegisterController::class)->only(['index', 'store']);
+});
+
+Route::middleware('perm.reports')->prefix('reports')->group(function (): void {
+    Route::get('sales', [ReportController::class, 'sales']);
+    Route::get('purchases', [ReportController::class, 'purchase']);
+    Route::get('inventory', [ReportController::class, 'inventory']);
+    Route::get('expiry', [ReportController::class, 'expiry']);
+    Route::get('profit-loss', [ReportController::class, 'profitLoss']);
+    Route::get('vat', [ReportController::class, 'vat']);
+    Route::get('narcotics', [ReportController::class, 'narcotics']);
+    Route::get('dead-stock', [ReportController::class, 'deadStock']);
+    Route::get('supplier-due', [ReportController::class, 'supplierDue']);
+    Route::get('customer-due', [ReportController::class, 'customerDue']);
+    Route::get('schedule-wise', [ReportController::class, 'scheduleWise']);
+    Route::get('category-wise', [ReportController::class, 'categoryWise']);
+});
+
+Route::middleware('perm.settings')->group(function (): void {
+    Route::get('settings', [SettingController::class, 'index']);
+    Route::put('settings', [SettingController::class, 'update']);
+    Route::put('company', [CompanyController::class, 'update']);
+    Route::get('inventory/stock', [InventoryController::class, 'stock']);
+    Route::get('inventory/reorder-suggestions', [InventoryController::class, 'reorderSuggestions']);
+});
+
+Route::middleware('perm.users')->group(function (): void {
+    Route::apiResource('users', UserController::class);
+});
+
+Route::middleware('perm.billing')->group(function (): void {
     Route::post('subscriptions/subscribe', [SubscriptionController::class, 'subscribe']);
     Route::post('subscriptions/cancel', [SubscriptionController::class, 'cancel']);
 });

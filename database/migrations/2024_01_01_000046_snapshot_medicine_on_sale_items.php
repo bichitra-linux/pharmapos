@@ -31,25 +31,29 @@ return new class extends Migration
         });
 
         // Backfill: snapshot current medicine + manufacturer data into existing sale_items
-        DB::statement("
-            UPDATE sale_items si
-            JOIN medicines m ON m.id = si.medicine_id
-            LEFT JOIN manufacturers mf ON mf.id = m.manufacturer_id
-            SET
-                si.medicine_name = m.brand_name,
-                si.medicine_generic_name = m.generic_name,
-                si.medicine_strength = m.strength,
-                si.medicine_manufacturer = mf.name,
-                si.medicine_dosage_form = m.dosage_form
-            WHERE si.medicine_name IS NULL
-        ");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("
+                UPDATE sale_items si
+                JOIN medicines m ON m.id = si.medicine_id
+                LEFT JOIN manufacturers mf ON mf.id = m.manufacturer_id
+                SET
+                    si.medicine_name = m.brand_name,
+                    si.medicine_generic_name = m.generic_name,
+                    si.medicine_strength = m.strength,
+                    si.medicine_manufacturer = mf.name,
+                    si.medicine_dosage_form = m.dosage_form
+                WHERE si.medicine_name IS NULL
+            ");
+        }
 
         // Fallback for orphaned sale_items whose medicine was deleted
-        DB::statement("
-            UPDATE sale_items si
-            SET si.medicine_name = CONCAT('Deleted medicine #', si.medicine_id)
-            WHERE si.medicine_name IS NULL
-        ");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("
+                UPDATE sale_items si
+                SET si.medicine_name = CONCAT('Deleted medicine #', si.medicine_id)
+                WHERE si.medicine_name IS NULL
+            ");
+        }
     }
 
     public function down(): void

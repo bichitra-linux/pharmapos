@@ -29,18 +29,21 @@ enum UserRole: string
             self::Owner => ['*'],
             self::Admin => [
                 'sales.*', 'purchases.*', 'inventory.*', 'customers.*',
-                'suppliers.*', 'reports.*', 'prescriptions.*', 'users.view',
+                'suppliers.*', 'reports.*', 'prescriptions.*', 'returns.*',
+                'outlets.*', 'settings.edit', 'users.*', 'register.operate',
+                'manage_billing',
             ],
             self::Pharmacist => [
-                'sales.*', 'prescriptions.*', 'inventory.view',
-                'customers.view', 'medicines.view',
+                'sales.*', 'prescriptions.*', 'inventory.*',
+                'customers.view', 'medicines.*', 'register.operate',
             ],
             self::Cashier => [
                 'sales.create', 'sales.view', 'customers.view',
-                'payments.*',
+                'payments.*', 'inventory.view', 'medicines.view',
             ],
             self::InventoryStaff => [
-                'inventory.*', 'purchases.view', 'suppliers.view',
+                'inventory.*', 'purchases.*', 'suppliers.view',
+                'medicines.view', 'returns.view',
             ],
         };
     }

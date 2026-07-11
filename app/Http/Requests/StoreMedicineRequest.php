@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Medicine;
 
-final class StoreMedicineRequest extends FormRequest
+final class StoreMedicineRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Medicine::class) ?? false;
     }
 
     public function rules(): array

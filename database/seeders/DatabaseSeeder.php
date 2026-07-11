@@ -8,7 +8,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([
+        $seeders = [
             SubscriptionPlanSeeder::class,
             CompanySeeder::class,
             SaltCompositionSeeder::class,
@@ -16,7 +16,12 @@ class DatabaseSeeder extends Seeder
             ManufacturerSeeder::class,
             SuperAdminSeeder::class,
             LandingPageSeeder::class,
-            DummyDataSeeder::class,
-        ]);
+        ];
+
+        if (! app()->isProduction()) {
+            $seeders[] = DummyDataSeeder::class;
+        }
+
+        $this->call($seeders);
     }
 }

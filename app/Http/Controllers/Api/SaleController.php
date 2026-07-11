@@ -10,17 +10,18 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Medicine;
 use App\Models\Sale;
+use App\Services\InvoiceService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 final class SaleController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Sale::where('company_id', $request->user()->company_id)
-            ->where('outlet_id', $request->user()->outlet_id)
+        $query = Sale::where('outlet_id', $request->user()->outlet_id)
             ->with(['customer:id,name,phone', 'payments', 'dispensedBy:id,name']);
 
         if ($request->filled('date_from')) {
@@ -412,7 +413,22 @@ final class SaleController extends Controller
 
                 if ($customer) {
                     $loyaltyPoints = (int) floor($grandTotal / 100);
-                    $customer->increment('loyalty_points', $loyaltyPoints);
+                    $customer->addLoyaltyPoints($loyaltyPoints);
+
+                    if ($dueAmount > 0) {
+                        DB::table('credit_ledger')->insert([
+                            'company_id' => $companyId,
+                            'customer_id' => $customer->id,
+                            'sale_id' => $sale->id,
+                            'type' => 'credit_invoice',
+                            'amount' => round($dueAmount, 2),
+                            'balance_after' => round((float) $customer->total_dues + $dueAmount, 2),
+                            'note' => "Credit for invoice {$invoiceNumber}",
+                            'recorded_by' => $user->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
             }
 
@@ -432,9 +448,7 @@ final class SaleController extends Controller
 
     public function show(Request $request, Sale $sale): JsonResponse
     {
-        if ($sale->company_id !== $request->user()->company_id) {
-            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
-        }
+        $this->authorize('view', $sale);
 
         $sale->load([
             'customer',
@@ -451,10 +465,12 @@ final class SaleController extends Controller
         ]);
     }
 
-    public function invoice(Request $request, Sale $sale): JsonResponse
+    public function invoice(Request $request, Sale $sale, InvoiceService $invoices): JsonResponse|Response
     {
-        if ($sale->company_id !== $request->user()->company_id) {
-            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        $this->authorize('view', $sale);
+
+        if ($request->format === 'pdf') {
+            return $invoices->downloadInvoice($sale);
         }
 
         $sale->load([

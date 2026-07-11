@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\InventoryAdjustment;
 use App\Models\MedicineBatch;
+use App\Services\InventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class InventoryController extends Controller
 {
@@ -93,7 +96,7 @@ final class InventoryController extends Controller
         ]);
     }
 
-    public function storeAdjustment(Request $request): JsonResponse
+    public function storeAdjustment(Request $request, InventoryService $inventory): JsonResponse
     {
         $request->validate([
             'type' => 'required|in:damage,expiry,count_adjustment,return,other',
@@ -104,95 +107,27 @@ final class InventoryController extends Controller
             'items.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
-        $companyId = $request->user()->company_id;
-        $outletId = $request->user()->outlet_id;
-
-        return \DB::transaction(function () use ($request, $companyId, $outletId) {
-            $adjustment = \DB::table('inventory_adjustments')->insertGetId([
-                'company_id' => $companyId,
-                'outlet_id' => $outletId,
-                'type' => $request->type,
-                'reason' => $request->reason,
-                'adjusted_by' => $request->user()->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Batch-fetch all batches with lock to avoid race conditions
-            $batchIds = collect($request->items)->pluck('batch_id')->unique();
-            $batches = \DB::table('medicine_batches')
-                ->where('company_id', $companyId)
-                ->where('outlet_id', $outletId)
-                ->whereIn('id', $batchIds)
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-
-            foreach ($request->items as $item) {
-                $batch = $batches->get($item['batch_id']);
-
-                if (!$batch) {
-                    continue;
-                }
-
-                $quantityChange = $request->type === 'count_adjustment'
+        $data = [
+            'outlet_id' => $request->user()->outlet_id,
+            'adjustment_type' => $request->type,
+            'reason' => $request->reason,
+            'items' => collect($request->items)->map(fn ($item) => [
+                'batch_id' => $item['batch_id'],
+                'quantity_adjusted' => $request->type === 'count_adjustment'
                     ? (float) $item['quantity']
-                    : -(float) $item['quantity'];
+                    : -(float) $item['quantity'],
+                'reason' => $request->reason,
+            ])->all(),
+        ];
 
-                \DB::table('adjustment_items')->insert([
-                    'adjustment_id' => $adjustment,
-                    'medicine_id' => $item['medicine_id'],
-                    'batch_id' => $item['batch_id'],
-                    'quantity' => $quantityChange,
-                    'reason' => $request->reason,
-                    'created_at' => now(),
-                ]);
+        $inventory->createAdjustment($data);
 
-                if ($quantityChange >= 0) {
-                    \DB::table('medicine_batches')
-                        ->where('id', $item['batch_id'])
-                        ->increment('quantity_in_stock', $quantityChange);
-                } else {
-                    \DB::table('medicine_batches')
-                        ->where('id', $item['batch_id'])
-                        ->decrement('quantity_in_stock', abs($quantityChange));
-                }
-            }
-
-            return $this->created(null, 'Stock adjustment recorded successfully.');
-        });
+        return $this->created(null, 'Stock adjustment recorded successfully.');
     }
 
-    public function reorderSuggestions(Request $request): JsonResponse
+    public function reorderSuggestions(Request $request, InventoryService $inventory): JsonResponse
     {
-        $companyId = $request->user()->company_id;
-        $outletId = $request->user()->outlet_id;
-
-        $suggestions = \DB::table('medicine_batches')
-            ->join('medicines', 'medicines.id', '=', 'medicine_batches.medicine_id')
-            ->leftJoin('suppliers', 'suppliers.id', '=', 'medicine_batches.supplier_id')
-            ->where('medicine_batches.company_id', $companyId)
-            ->where('medicine_batches.outlet_id', $outletId)
-            ->where('medicine_batches.quantity_in_stock', '>', 0)
-            ->whereColumn('medicine_batches.quantity_in_stock', '<=', 'medicine_batches.reorder_level')
-            ->select(
-                'medicines.id',
-                'medicines.brand_name',
-                'medicines.generic_name',
-                'medicines.barcode',
-                'medicines.unit_type',
-                'medicines.units_per_pack',
-                \DB::raw('SUM(medicine_batches.quantity_in_stock) as current_stock'),
-                \DB::raw('MAX(medicine_batches.reorder_level) as reorder_level'),
-                'suppliers.id as supplier_id',
-                'suppliers.name as supplier_name',
-            )
-            ->groupBy('medicines.id', 'medicines.brand_name', 'medicines.generic_name', 'medicines.barcode',
-                'medicines.unit_type', 'medicines.units_per_pack', 'suppliers.id', 'suppliers.name')
-            ->orderBy('current_stock')
-            ->get();
-
-        $grouped = $suggestions->groupBy(fn ($item) => $item->supplier_name ?? 'Unassigned');
+        $grouped = $inventory->reorderSuggestions($request->user()->outlet_id);
 
         return $this->success($grouped);
     }
