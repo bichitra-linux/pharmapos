@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('payment_method');
             $table->string('gateway')->nullable();
             $table->json('gateway_response')->nullable();
-            $table->timestamp('starts_at');
-            $table->timestamp('expires_at');
+            $table->dateTime('starts_at');
+            $table->dateTime('expires_at');
             $table->enum('status', ['active', 'expired', 'cancelled'])->default('active');
             $table->timestamps();
         });
