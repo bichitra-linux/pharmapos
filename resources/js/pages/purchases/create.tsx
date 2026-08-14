@@ -105,6 +105,10 @@ export default function CreatePurchase() {
             addToast({ type: 'error', title: 'Please select supplier and add items' });
             return;
         }
+        const discount = items.reduce((sum, i) => {
+            const lineTotal = (i.unit_price ?? 0) * (i.quantity ?? 0);
+            return sum + (lineTotal * (i.discount_percent ?? 0)) / 100;
+        }, 0);
         mutation.mutate({
             supplier_id: supplierId,
             purchase_date: invoiceDate,
@@ -117,6 +121,7 @@ export default function CreatePurchase() {
                 purchase_price: i.unit_price,
                 vat_rate: i.tax_rate ?? 13,
             })),
+            discount: Math.round(discount * 100) / 100,
             notes,
             ...(dueDate && { due_date: dueDate }),
             ...(supplierInvoice && { supplier_invoice_number: supplierInvoice }),

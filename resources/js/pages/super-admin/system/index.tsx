@@ -12,11 +12,13 @@ import {
     CheckCircle2,
     XCircle,
 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
 
 export default function SuperAdminSystemPage() {
     const queryClient = useQueryClient();
+    const { addToast } = useToast();
 
-    const { data: health, isLoading } = useQuery({
+    const { data: health, isLoading, isError, error } = useQuery({
         queryKey: ['super-admin', 'health'],
         queryFn: () => superAdminService.getHealth(),
         select: (res) => res.data,
@@ -26,10 +28,46 @@ export default function SuperAdminSystemPage() {
         mutationFn: () => superAdminService.clearCache(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['super-admin', 'health'] });
+            addToast({ type: 'success', title: 'Cache cleared', message: 'All Laravel caches have been flushed.' });
+        },
+        onError: (err: any) => {
+            addToast({ type: 'error', title: 'Clear cache failed', message: String(err?.message ?? err) });
         },
     });
 
     if (isLoading) return <PageLoader />;
+
+    if (isError) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold">System Health</h1>
+                </div>
+                <div className="rounded-lg border border-danger-200 bg-danger-50 p-6">
+                    <div className="flex items-start gap-3">
+                        <XCircle className="h-6 w-6 shrink-0 text-danger-600" />
+                        <div className="flex-1">
+                            <h3 className="text-base font-semibold text-danger-900">Unable to load system health</h3>
+                            <p className="mt-1 text-sm text-danger-700">
+                                {(error as any)?.message ?? 'The health endpoint returned an error.'}
+                            </p>
+                            <p className="mt-2 text-xs text-text-muted">
+                                Try{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => clearCacheMutation.mutate()}
+                                    className="font-medium text-primary-600 underline-offset-4 hover:underline"
+                                >
+                                    clearing the cache
+                                </button>{' '}
+                                or refresh the page.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const healthChecks = [
         { label: 'Database', status: health?.checks?.database?.status, icon: Database },

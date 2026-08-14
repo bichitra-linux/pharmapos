@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $page->meta_title ?? 'PharmaPOS: Pharmacy POS for Nepal' }}</title>
     <meta name="description" content="{{ $page->meta_description ?? 'Cloud-based pharmacy Point-of-Sale and inventory management system built for Nepali pharmacies.' }}">
+    <link rel="icon" type="image/png" href="{{ asset('pharmapos-logo.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800" rel="stylesheet">
     <style>
         :root {
             --brand: oklch(0.55 0.13 50);
-            --brand-deep: oklch(0.42 0.13 50);
+            --brand-deep: oklch(0.28 0.06 260);
+            --brand-green: oklch(0.46 0.17 145);
             --brand-soft: oklch(0.93 0.04 50);
             --surface: oklch(0.99 0.005 50);
             --surface-2: oklch(0.96 0.007 50);
@@ -30,7 +32,8 @@
                 --ink-2: oklch(0.68 0.008 50);
                 --rule: oklch(0.30 0.012 50);
                 --brand: oklch(0.62 0.11 50);
-                --brand-deep: oklch(0.48 0.12 50);
+                --brand-deep: oklch(0.22 0.06 260);
+                --brand-green: oklch(0.56 0.19 145);
                 --brand-soft: oklch(0.25 0.05 50);
             }
         }
@@ -43,7 +46,7 @@
         .container { width: min(76rem, calc(100% - 2rem)); margin-inline: auto; }
         .nav { position: sticky; top: 0; z-index: 50; background: color-mix(in oklch, var(--surface) 92%, transparent); border-bottom: 1px solid var(--rule); backdrop-filter: blur(10px); }
         .nav-inner { min-height: 4.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-        .logo { font-weight: 800; letter-spacing: -0.03em; text-decoration: none; font-size: 1.25rem; }
+        .logo { display: inline-flex; align-items: center; text-decoration: none; font-weight: 800; letter-spacing: -0.03em; font-size: 1.25rem; }
         .nav-links { display: flex; align-items: center; gap: 1.25rem; }
         .nav-links a, .signin { min-height: 2.75rem; display: inline-flex; align-items: center; color: var(--ink-2); font-size: .925rem; font-weight: 600; text-decoration: none; }
         .nav-links a:hover, .signin:hover { color: var(--ink); }
@@ -156,7 +159,7 @@
 <a href="#main" class="skip-link">Skip to main content</a>
 <nav class="nav" aria-label="Primary navigation">
     <div class="container nav-inner">
-        <a class="logo" href="/">{{ $nav['logo_text'] }}</a>
+<a class="logo" href="/" aria-label="PharmaPOS home"><img src="{{ asset('pharmapos-logo.png') }}" alt="PharmaPOS" height="32"></a>
         <div class="nav-links" aria-label="Page sections">
             <a href="#features">Features</a><a href="#workflow">Workflow</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
         </div>
@@ -195,7 +198,7 @@
     <section class="section" id="faq"><div class="container"><div class="section-title"><h2>{{ $faq['heading'] }}</h2></div><div class="faq-list">@foreach ($faq['items'] ?? [] as $item)<div class="faq-item"><button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-panel-{{ $loop->index }}">{{ $item['question'] ?? '' }}<span aria-hidden="true">+</span></button><div class="faq-answer" id="faq-panel-{{ $loop->index }}"><p>{{ $item['answer'] ?? '' }}</p></div></div>@endforeach</div></div></section>
     <section class="section cta"><div class="container section-title"><h2>{{ $cta['heading'] }}</h2><p>{{ $cta['subheading'] }}</p><a class="btn" href="{{ $cta['button_url'] }}">{{ $cta['button_text'] }}</a></div></section>
 </main>
-<footer class="footer"><div class="container"><div class="footer-grid"><div><a class="logo" href="/">{{ $footer['logo_text'] }}</a><p>{{ $footer['description'] }}</p></div><div><h3>Product</h3><a href="#features">Features</a><a href="#pricing">Pricing</a></div><div><h3>Compliance</h3><a href="#compliance">DDA workflow</a><a href="#faq">FAQ</a></div><div><h3>Company</h3>@foreach ($footer['links'] ?? [] as $link)<a href="{{ $link['url'] }}">{{ $link['label'] }}</a>@endforeach</div></div><div class="footer-bottom">&copy; {{ date('Y') }} PharmaPOS. Made for Nepal's pharmacies.</div></div></footer>
+<footer class="footer"><div class="container"><div class="footer-grid"><div><a class="logo" href="/" aria-label="PharmaPOS home"><img src="{{ asset('pharmapos-logo.png') }}" alt="PharmaPOS" height="32"></a><p>{{ $footer['description'] }}</p></div><div><h3>Product</h3><a href="#features">Features</a><a href="#pricing">Pricing</a></div><div><h3>Compliance</h3><a href="#compliance">DDA workflow</a><a href="#faq">FAQ</a></div><div><h3>Company</h3>@foreach ($footer['links'] ?? [] as $link)<a href="{{ $link['url'] }}">{{ $link['label'] }}</a>@endforeach</div></div><div class="footer-bottom">&copy; {{ date('Y') }} PharmaPOS. Made for Nepal's pharmacies.</div></div></footer>
 <script>
     document.getElementById('menu-button')?.addEventListener('click', function () {
         var menu = document.getElementById('mobile-menu');

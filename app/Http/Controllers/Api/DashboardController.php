@@ -181,7 +181,7 @@ final class DashboardController extends Controller
             )
             ->groupBy('medicines.id', 'medicines.brand_name', 'medicines.generic_name')
             ->orderByDesc('total_quantity')
-            ->limit(10)
+            ->limit((int) $request->get('limit', 10))
             ->get();
 
         return response()->json([

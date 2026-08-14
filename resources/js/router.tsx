@@ -60,6 +60,7 @@ const CreateEditUser = lazy(() => import('@/pages/users/create'));
 const SuperAdminLogin = lazy(() => import('@/pages/super-admin/login'));
 const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/dashboard'));
 const SuperAdminTenants = lazy(() => import('@/pages/super-admin/tenants/index'));
+const SuperAdminTenantCreate = lazy(() => import('@/pages/super-admin/tenants/create'));
 const SuperAdminTenantShow = lazy(() => import('@/pages/super-admin/tenants/show'));
 const SuperAdminPlans = lazy(() => import('@/pages/super-admin/plans/index'));
 const SuperAdminSubscriptions = lazy(() => import('@/pages/super-admin/subscriptions/index'));
@@ -201,6 +202,7 @@ export const router = createBrowserRouter([
             { index: true, element: <Navigate to="/super-admin/dashboard" replace /> },
             { path: 'dashboard', element: <SuspenseWrapper><SuperAdminDashboard /></SuspenseWrapper> },
             { path: 'tenants', element: <SuspenseWrapper><SuperAdminTenants /></SuspenseWrapper> },
+            { path: 'tenants/create', element: <SuspenseWrapper><SuperAdminTenantCreate /></SuspenseWrapper> },
             { path: 'tenants/:id', element: <SuspenseWrapper><SuperAdminTenantShow /></SuspenseWrapper> },
             { path: 'plans', element: <SuspenseWrapper><SuperAdminPlans /></SuspenseWrapper> },
             { path: 'subscriptions', element: <SuspenseWrapper><SuperAdminSubscriptions /></SuspenseWrapper> },

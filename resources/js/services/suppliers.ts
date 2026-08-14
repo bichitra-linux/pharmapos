@@ -28,9 +28,14 @@ export const suppliersService = {
         return res.data;
     },
 
-    getLedger: async (id: number, params?: Record<string, string | number>) => {
-        const res = await api.get(`/suppliers/${id}/ledger`, { params });
-        return extractPaginatedData<SupplierPayment>(res.data);
+    getLedger: async (id: number) => {
+        const res = await api.get<ApiResponse<{
+            supplier: Supplier;
+            purchases: { id: number; purchase_number: string; total: number; paid_amount: number; status: string; created_at: string }[];
+            payments: (SupplierPayment & { purchase_id?: number; purchase_number?: string | null })[];
+            summary: { total_purchases: number; total_paid: number; balance: number };
+        }>>(`/suppliers/${id}/ledger`);
+        return res.data;
     },
 
     recordPayment: async (supplierId: number, data: { amount: number; payment_method: string; reference_number?: string; purchase_id?: number; notes?: string }) => {

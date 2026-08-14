@@ -210,7 +210,10 @@ class PurchaseTest extends TestCase
                 ],
             ]);
 
-        $response->assertStatus(500);
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
     }
 
     public function test_can_list_purchases(): void

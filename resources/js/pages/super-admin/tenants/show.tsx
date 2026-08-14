@@ -12,7 +12,6 @@ import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
     ArrowLeft,
-    Edit,
     PauseCircle,
     PlayCircle,
     Users,
@@ -93,9 +92,6 @@ export default function SuperAdminTenantShowPage() {
                     )}
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => navigate(`/super-admin/tenants/${id}/edit`)}>
-                        <Edit className="mr-2 h-4 w-4" /> Edit
-                    </Button>
                     <Button variant="outline" onClick={() => impersonateMutation.mutate()} loading={impersonateMutation.isPending}>
                         <Eye className="mr-2 h-4 w-4" /> Impersonate
                     </Button>

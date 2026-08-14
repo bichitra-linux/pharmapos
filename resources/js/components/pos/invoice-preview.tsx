@@ -13,7 +13,7 @@ interface InvoicePreviewProps {
 
 function InvoiceContent({ sale, isReceipt }: { sale: Sale; isReceipt: boolean }) {
     const company = (sale as any).company;
-    const cashier = (sale as any).dispensed_by_user;
+    const cashier = (sale as any).dispensedBy?.name ?? (sale as any).dispensed_by_user;
     const payments = (sale as any).payments ?? [];
 
     return (

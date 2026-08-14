@@ -45,7 +45,7 @@ export default function CustomersIndex() {
                 searchable
                 searchPlaceholder="Search customers..."
                 onSearch={setSearch}
-                onRowClick={(item) => navigate(`/customers/${(item as unknown as Customer).id}/edit`)}
+                onRowClick={(item) => navigate(`/customers/${(item as unknown as Customer).id}`)}
                 pagination={{
                     currentPage: data?.meta?.current_page ?? 1,
                     lastPage: data?.meta?.last_page ?? 1,

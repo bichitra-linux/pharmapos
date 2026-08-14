@@ -93,7 +93,7 @@ export default function EditMedicine() {
     const { data: mData } = useQuery({
         queryKey: ['manufacturers', 'list'],
         queryFn: () => manufacturersService.list({ per_page: 200 }),
-        select: (res: any) => res.data?.data ?? res.data ?? [],
+        select: (res: any) => res.data,
         staleTime: 60_000,
     });
     const manufacturerList: { id: number; name: string; country?: string }[] = Array.isArray(mData) ? mData : [];

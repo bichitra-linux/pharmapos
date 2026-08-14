@@ -138,6 +138,11 @@ class TenantController extends Controller
 
         $tenant->loadCount(['users', 'outlets', 'medicines']);
 
+        $tenant->setAttribute('payments', \App\Models\SubscriptionPayment::where('company_id', $tenant->id)
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get());
+
         return $this->success($tenant);
     }
 
@@ -207,9 +212,14 @@ class TenantController extends Controller
 
     public function impersonate(Request $request, Company $tenant): JsonResponse
     {
-        $user = $tenant->users()->where('is_active', true)->first();
+        $user = $tenant->users()
+            ->withoutGlobalScopes()
+            ->where('company_id', $tenant->id)
+            ->where('is_active', true)
+            ->orderByDesc('id')
+            ->first();
 
-        if (!$user) {
+        if (! $user) {
             return $this->error('No active user found in this tenant.', 404);
         }
 
@@ -237,6 +247,13 @@ class TenantController extends Controller
             'tenant' => $tenant->only(['id', 'name', 'slug']),
             'expires_at' => now()->addHours(1),
         ], 'Impersonation token generated.');
+    }
+
+    public function stopImpersonation(Request $request): JsonResponse
+    {
+        \Laravel\Sanctum\PersonalAccessToken::where('name', 'impersonation-'.$request->user()->id)->delete();
+
+        return $this->success(null, 'Impersonation ended.');
     }
 
     public function usage(Company $tenant): JsonResponse

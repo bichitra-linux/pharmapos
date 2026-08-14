@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\PaymentGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,7 +42,7 @@ final class SubscriptionController extends Controller
         $request->validate([
             'plan_id' => 'required|exists:subscription_plans,id',
             'payment_method' => 'nullable|string|max:50',
-            'gateway_code' => 'nullable|string|exists:payment_gateways,code',
+            'gateway_code' => 'required|string|exists:payment_gateways,code',
             'reference_number' => 'nullable|string|max:100',
         ]);
 
@@ -60,73 +61,39 @@ final class SubscriptionController extends Controller
         $expiresAt = $planHasYearly ? now()->addDays(365) : now()->addDays(30);
         $amount = $planHasYearly ? $plan->price_yearly : $plan->price_monthly;
 
-        // If gateway selected, initiate payment (not marking active yet)
-        if ($request->gateway_code) {
-            $gateway = PaymentGateway::where('code', $request->gateway_code)
-                ->where('is_active', true)
-                ->first();
+        $gateway = PaymentGateway::where('code', $request->gateway_code)
+            ->where('is_active', true)
+            ->first();
 
-            if (! $gateway) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Selected payment gateway is not active.',
-                ], 422);
-            }
-
-            $paymentId = DB::table('subscription_payments')->insertGetId([
-                'company_id' => $companyId,
-                'plan_id' => $plan->id,
-                'amount' => $amount,
-                'payment_method' => 'online',
-                'gateway' => $gateway->code,
-                'starts_at' => now(),
-                'expires_at' => $expiresAt,
-                'status' => 'pending',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
+        if (! $gateway) {
             return response()->json([
-                'success' => true,
-                'message' => 'Redirecting to payment gateway.',
-                'data' => [
-                    'payment_id' => $paymentId,
-                    'amount' => $amount,
-                    'gateway' => $gateway->code,
-                    'gateway_config' => $gateway->config,
-                    'is_sandbox' => $gateway->is_sandbox,
-                ],
-            ]);
+                'success' => false,
+                'message' => 'Selected payment gateway is not active.',
+            ], 422);
         }
 
-        // Direct activation (cash/admin)
-        DB::table('companies')
-            ->where('id', $companyId)
-            ->update([
-                'subscription_plan_id' => $plan->id,
-                'subscription_expires_at' => $expiresAt,
-                'updated_at' => now(),
-            ]);
-
-        DB::table('subscription_payments')->insert([
+        $paymentId = DB::table('subscription_payments')->insertGetId([
             'company_id' => $companyId,
             'plan_id' => $plan->id,
             'amount' => $amount,
-            'payment_method' => $request->payment_method ?? 'cash',
-            'gateway' => $request->reference_number,
+            'payment_method' => 'online',
+            'gateway' => $gateway->code,
             'starts_at' => now(),
             'expires_at' => $expiresAt,
-            'status' => 'active',
+            'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Subscription activated successfully.',
+            'message' => 'Redirecting to payment gateway.',
             'data' => [
-                'plan' => $plan,
-                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+                'payment_id' => $paymentId,
+                'amount' => $amount,
+                'gateway' => $gateway->code,
+                'gateway_name' => $gateway->name,
+                'is_sandbox' => $gateway->is_sandbox,
             ],
         ]);
     }
@@ -186,6 +153,17 @@ final class SubscriptionController extends Controller
                 'status' => 'cancelled',
                 'updated_at' => now(),
             ]);
+
+        AuditLog::withoutGlobalScopes()->create([
+            'company_id' => $companyId,
+            'user_id' => $request->user()?->id,
+            'action' => 'subscription_cancelled',
+            'model_type' => 'subscription',
+            'new_values' => ['cancelled_at' => now()->toIso8601String()],
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'created_at' => now(),
+        ]);
 
         return response()->json([
             'success' => true,

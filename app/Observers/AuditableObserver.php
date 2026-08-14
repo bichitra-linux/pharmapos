@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Request;
 
@@ -43,16 +44,22 @@ class AuditableObserver
     {
         $companyId = $model->company_id ?? config('app.current_company_id');
 
-        // ponytail: skip audit if no tenant context (e.g. Company model itself, seeder runs)
+        if (! $companyId && $model instanceof \App\Models\Company) {
+            $companyId = $model->id;
+        }
+
+        // ponytail: skip audit if no tenant context (e.g. seeder runs)
         if (! $companyId) {
             return;
         }
 
         $request = Request::instance();
 
+        $actor = $request->user() ?? auth()->user();
+
         AuditLog::create([
             'company_id' => $companyId,
-            'user_id' => optional($request->user())->id ?? optional(auth()->user())->id,
+            'user_id' => $actor instanceof User ? $actor->id : null,
             'action' => $action,
             'model_type' => $model->getMorphClass(),
             'model_id' => $model->getKey(),

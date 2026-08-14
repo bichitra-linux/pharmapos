@@ -10,7 +10,7 @@ const buttonVariants = cva(
                 default: 'bg-primary-600 text-white hover:bg-primary-700',
                 destructive: 'bg-danger-600 text-white hover:bg-danger-700',
                 outline: 'border border-border bg-surface hover:bg-surface-muted text-text',
-                secondary: 'bg-surface-muted text-text hover:bg-surface-muted',
+                secondary: 'bg-surface-muted text-text hover:bg-surface-muted/80',
                 ghost: 'hover:bg-surface-muted text-text',
                 link: 'text-primary-600 underline-offset-4 hover:underline',
                 success: 'bg-success-600 text-white hover:bg-success-500',

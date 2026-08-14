@@ -63,7 +63,8 @@ final class SaleController extends Controller
 
     public function store(StoreSaleRequest $request): JsonResponse
     {
-        return DB::transaction(function () use ($request) {
+        try {
+            return DB::transaction(function () use ($request) {
             $user = $request->user();
             $companyId = $user->company_id;
             $outletId = $user->outlet_id;
@@ -110,6 +111,7 @@ final class SaleController extends Controller
                 ->keyBy('id');
 
             foreach ($request->items as $item) {
+                $itemBatches = [];
                 $medicine = $medicines->get($item['medicine_id']);
                 if (!$medicine) {
                     throw new \Exception("Medicine {$item['medicine_id']} not found.");
@@ -171,7 +173,7 @@ final class SaleController extends Controller
                     }
 
                     // Use outer quantity for stock deduction
-                    $batchesUsed[] = ['batch' => $batch, 'quantity' => $checkOuterQuantity];
+                    $itemBatches[] = ['batch' => $batch, 'quantity' => $checkOuterQuantity];
                 } else {
                     // FIFO: Use a sufficient threshold — check quantity_in_stock >= outer qty OR quantity_in_pieces >= pieces qty
                     $threshold = $isPieceMode ? $checkPiecesQuantity : $checkOuterQuantity;
@@ -214,13 +216,13 @@ final class SaleController extends Controller
                         foreach ($batches as $b) {
                             if ($remaining <= 0) break;
                             $take = min((float) $b->quantity_in_stock, $remaining);
-                            $batchesUsed[] = ['batch' => $b, 'quantity' => $take];
+                            $itemBatches[] = ['batch' => $b, 'quantity' => $take];
                             $remaining -= $take;
                         }
 
-                        $batch = $batchesUsed[0]['batch'] ?? $batches->first();
+                        $batch = $itemBatches[0]['batch'] ?? $batches->first();
                     } else {
-                        $batchesUsed[] = ['batch' => $batch, 'quantity' => $checkOuterQuantity];
+                        $itemBatches[] = ['batch' => $batch, 'quantity' => $checkOuterQuantity];
                     }
                 }
 
@@ -253,7 +255,7 @@ final class SaleController extends Controller
                 $quantity = $checkOuterQuantity;
 
                 // Create one sale_item per batch used (multi-batch support)
-                foreach ($batchesUsed as $used) {
+                foreach ($itemBatches as $used) {
                     $usedQuantity = (float) $used['quantity'];
                     $usedUnitPrice = $item['unit_price'] ?? (float) $used['batch']->selling_price_per_unit;
 
@@ -292,6 +294,8 @@ final class SaleController extends Controller
                         'medicine_dosage_form' => $medicine->dosage_form,
                     ];
                 }
+
+                $batchesUsed = array_merge($batchesUsed, $itemBatches);
             }
 
             // Deduct stock from all batches used (decrement both outer and pieces)
@@ -328,7 +332,7 @@ final class SaleController extends Controller
                 'discount_amount' => round($totalDiscount, 2),
                 'discount_type' => $request->discount_type ?? 'fixed',
                 'vat_amount' => round($vatAmount, 2),
-                'vat_percentage' => 13,
+                'vat_percentage' => $vatRate,
                 'total_amount' => round($grandTotal, 2),
                 'paid_amount' => round($paidAmount, 2),
                 'due_amount' => round($dueAmount, 2),
@@ -433,7 +437,7 @@ final class SaleController extends Controller
             }
 
             // Reload with relationships
-            $sale->load(['customer', 'items.medicine', 'items.batch', 'payments.paymentMethod', 'dispensedBy:id,name']);
+            $sale->load(['company', 'customer', 'items.medicine', 'items.batch', 'payments.paymentMethod', 'dispensedBy:id,name']);
 
             return response()->json([
                 'success' => true,
@@ -443,7 +447,13 @@ final class SaleController extends Controller
                     'invoice_number' => $invoiceNumber,
                 ],
             ], 201);
-        });
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     public function show(Request $request, Sale $sale): JsonResponse

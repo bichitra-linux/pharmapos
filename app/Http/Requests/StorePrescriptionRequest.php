@@ -18,6 +18,8 @@ final class StorePrescriptionRequest extends BaseFormRequest
         return [
             'customer_id' => 'nullable|exists:customers,id',
             'doctor_id' => 'nullable|exists:doctors,id',
+            'doctor_name' => 'nullable|string|max:255',
+            'hospital_name' => 'nullable|string|max:255',
             'prescription_date' => 'nullable|date',
             'diagnosis' => 'nullable|string|max:1000',
             'notes' => 'nullable|string|max:2000',

@@ -22,6 +22,7 @@ class Prescription extends Model
         'prescription_number',
         'doctor_name',
         'hospital_name',
+        'diagnosis',
         'prescription_date',
         'image_path',
         'status',

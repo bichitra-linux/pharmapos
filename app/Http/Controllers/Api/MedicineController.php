@@ -79,25 +79,27 @@ final class MedicineController extends Controller
         $companyId = $request->user()->company_id;
 
         // Soft duplicate check: warn if same brand+strength+manufacturer exists
-        $duplicate = Medicine::where('company_id', $companyId)
-            ->where('brand_name', $request->brand_name)
-            ->where('manufacturer_id', $request->manufacturer_id)
-            ->where('id', '!=', $request->route('medicine') ?? 0)
-            ->when($request->strength, fn ($q, $v) => $q->where('strength', $v))
-            ->first();
+        if (! $request->boolean('force_create')) {
+            $duplicate = Medicine::where('company_id', $companyId)
+                ->where('brand_name', $request->brand_name)
+                ->where('manufacturer_id', $request->manufacturer_id)
+                ->where('id', '!=', $request->route('medicine') ?? 0)
+                ->when($request->strength, fn ($q, $v) => $q->where('strength', $v))
+                ->first();
 
-        if ($duplicate) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Similar medicine already exists.',
-                'warning' => 'duplicate',
-                'similar_id' => $duplicate->id,
-                'similar' => [
-                    'brand_name' => $duplicate->brand_name,
-                    'strength' => $duplicate->strength,
-                    'manufacturer' => $duplicate->manufacturer?->name,
-                ],
-            ], 409);
+            if ($duplicate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Similar medicine already exists.',
+                    'warning' => 'duplicate',
+                    'similar_id' => $duplicate->id,
+                    'similar' => [
+                        'brand_name' => $duplicate->brand_name,
+                        'strength' => $duplicate->strength,
+                        'manufacturer' => $duplicate->manufacturer?->name,
+                    ],
+                ], 409);
+            }
         }
 
         $medicine = Medicine::create([
@@ -206,12 +208,15 @@ final class MedicineController extends Controller
                     ->orWhere('generic_name', 'like', "%{$query}%")
                     ->orWhere('barcode', $query);
             })
-            ->with(['batches' => function ($b) use ($outletId) {
-                $b->where('outlet_id', $outletId)
-                    ->where('quantity_in_stock', '>', 0)
-                    ->whereDate('expiry_date', '>', now())
-                    ->orderBy('expiry_date');
-            }])
+            ->with([
+                'manufacturer:id,name',
+                'batches' => function ($b) use ($outletId) {
+                    $b->where('outlet_id', $outletId)
+                        ->where('quantity_in_stock', '>', 0)
+                        ->whereDate('expiry_date', '>', now())
+                        ->orderBy('expiry_date');
+                },
+            ])
             ->limit(20)
             ->get()
             ->map(fn ($medicine) => [
@@ -222,6 +227,9 @@ final class MedicineController extends Controller
                 'dosage_form' => $medicine->dosage_form,
                 'strength' => $medicine->strength,
                 'units_per_pack' => $medicine->units_per_pack,
+                'manufacturer' => $medicine->manufacturer,
+                'allow_piece_selling' => $medicine->allow_piece_selling,
+                'piece_unit_label' => $medicine->piece_unit_label,
                 'batches' => $medicine->batches->map(fn ($batch) => [
                     'id' => $batch->id,
                     'batch_number' => $batch->batch_number,
@@ -229,6 +237,7 @@ final class MedicineController extends Controller
                     'quantity_in_stock' => (float) $batch->quantity_in_stock,
                     'selling_price_per_unit' => $batch->selling_price_per_unit,
                     'mrp_per_unit' => $batch->mrp_per_unit,
+                    'purchase_price_per_unit' => $batch->purchase_price_per_unit,
                 ]),
                 'total_stock' => $medicine->batches->sum('quantity_in_stock'),
             ]);

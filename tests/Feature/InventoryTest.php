@@ -17,7 +17,7 @@ class InventoryTest extends TestCase
     {
         $data = $this->createFullTestData();
         $medicine = $this->createMedicine($data['company'], ['brand_name' => 'Stock Med']);
-        $this->createMedicineBatch($data['company'], $medicine, $data['outlet'], [
+        $batch = $this->createMedicineBatch($data['company'], $medicine, $data['outlet'], [
             'quantity_in_stock' => 100,
             'purchase_price_per_unit' => 10.00,
         ]);
@@ -32,21 +32,30 @@ class InventoryTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'data' => [
-                        '*' => [
-                            'id',
-                            'brand_name',
-                            'current_stock',
-                            'stock_value',
-                        ],
+                    '*' => [
+                        'id',
+                        'batch_number',
+                        'quantity_in_stock',
+                        'expiry_date',
                     ],
                 ],
             ]);
 
-        $stockData = collect($response->json('data.data'));
-        $stockMed = $stockData->firstWhere('brand_name', 'Stock Med');
+        $stockData = collect($response->json('data'));
+        $stockMed = $stockData->firstWhere('batch_number', $batch->batch_number);
         $this->assertNotNull($stockMed);
-        $this->assertEquals(100, (float) $stockMed['current_stock']);
+        $this->assertEquals(100, (float) $stockMed['quantity_in_stock']);
+    }
+
+    private function adjustmentPayload(int $batchId, int $medicineId, string $type, float $quantity, string $reason): array
+    {
+        return [
+            'type' => $type,
+            'reason' => $reason,
+            'items' => [
+                ['medicine_id' => $medicineId, 'batch_id' => $batchId, 'quantity' => $quantity],
+            ],
+        ];
     }
 
     public function test_can_create_stock_adjustment(): void
@@ -58,25 +67,14 @@ class InventoryTest extends TestCase
         ]);
 
         $response = $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'damage',
-                'quantity' => 10,
-                'reason' => 'Damaged during transport',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'damage', 10, 'Damaged during transport'
+            ));
 
         $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
                 'message' => 'Stock adjustment recorded successfully.',
-            ])
-            ->assertJsonStructure([
-                'success',
-                'message',
-                'data' => [
-                    'previous_quantity',
-                    'new_quantity',
-                ],
             ]);
 
         $this->assertDatabaseHas('medicine_batches', [
@@ -101,12 +99,9 @@ class InventoryTest extends TestCase
         ]);
 
         $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'damage',
-                'quantity' => 20,
-                'reason' => 'Broken bottles',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'damage', 20, 'Broken bottles'
+            ));
 
         $this->assertDatabaseHas('medicine_batches', [
             'id' => $batch->id,
@@ -123,12 +118,9 @@ class InventoryTest extends TestCase
         ]);
 
         $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'expiry',
-                'quantity' => 15,
-                'reason' => 'Expired stock removal',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'expiry', 15, 'Expired stock removal'
+            ));
 
         $this->assertDatabaseHas('medicine_batches', [
             'id' => $batch->id,
@@ -145,18 +137,19 @@ class InventoryTest extends TestCase
         ]);
 
         $response = $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'damage',
-                'quantity' => 10,
-                'reason' => 'Trying to remove more than available',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'damage', 10, 'Trying to remove more than available'
+            ));
 
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'Adjustment would result in negative stock.',
             ]);
+
+        $this->assertStringContainsString(
+            'Adjustment would result in negative stock for batch',
+            $response->json('message')
+        );
 
         $this->assertDatabaseHas('medicine_batches', [
             'id' => $batch->id,
@@ -173,12 +166,9 @@ class InventoryTest extends TestCase
         ]);
 
         $response = $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'count_adjustment',
-                'quantity' => 85,
-                'reason' => 'Physical count mismatch',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'count_adjustment', 85, 'Physical count mismatch'
+            ));
 
         $response->assertStatus(201);
 
@@ -197,20 +187,14 @@ class InventoryTest extends TestCase
         ]);
 
         $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'damage',
-                'quantity' => 5,
-                'reason' => 'First damage',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'damage', 5, 'First damage'
+            ));
 
         $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'expiry',
-                'quantity' => 10,
-                'reason' => 'Expired stock',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'expiry', 10, 'Expired stock'
+            ));
 
         $response = $this->actingAs($data['user'])
             ->getJson('/api/inventory/adjustments');
@@ -223,7 +207,7 @@ class InventoryTest extends TestCase
         $this->assertCount(2, $response->json('data.data'));
     }
 
-    public function test_stock_report_shows_zero_for_no_batches(): void
+    public function test_stock_report_is_empty_when_no_batches_exist(): void
     {
         $data = $this->createFullTestData();
         $this->createMedicine($data['company'], ['brand_name' => 'No Stock Med']);
@@ -233,10 +217,7 @@ class InventoryTest extends TestCase
 
         $response->assertOk();
 
-        $stockData = collect($response->json('data.data'));
-        $noStockMed = $stockData->firstWhere('brand_name', 'No Stock Med');
-        $this->assertNotNull($noStockMed);
-        $this->assertEquals(0, (float) $noStockMed['current_stock']);
+        $this->assertCount(0, $response->json('data'));
     }
 
     public function test_batch_deactivates_when_stock_reaches_zero(): void
@@ -248,12 +229,9 @@ class InventoryTest extends TestCase
         ]);
 
         $this->actingAs($data['user'])
-            ->postJson('/api/inventory/adjustments', [
-                'batch_id' => $batch->id,
-                'type' => 'damage',
-                'quantity' => 5,
-                'reason' => 'Complete loss',
-            ]);
+            ->postJson('/api/inventory/adjustments', $this->adjustmentPayload(
+                $batch->id, $medicine->id, 'damage', 5, 'Complete loss'
+            ));
 
         $this->assertDatabaseHas('medicine_batches', [
             'id' => $batch->id,

@@ -6,7 +6,7 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Upload, AlertTriangle, DollarSign, Printer } from 'lucide-react';
+import { Plus, Upload, AlertTriangle, DollarSign } from 'lucide-react';
 import type { Medicine } from '@/types';
 
 export default function MedicinesIndex() {
@@ -95,9 +95,6 @@ export default function MedicinesIndex() {
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => { setSelectedIds((data?.data ?? []).map((m: any) => m.id)); setShowPriceUpdate(true); }}>
                         <DollarSign className="mr-1.5 h-4 w-4" /> Bulk Price
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => window.open('/medicines/labels', '_blank')}>
-                        <Printer className="mr-1.5 h-4 w-4" /> Print Labels
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => navigate('/medicines/manufacturers')}>
                         Manufacturers

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchasesService } from '@/services/purchases';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ export default function ShowPurchase() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { addToast } = useToast();
+    const queryClient = useQueryClient();
 
     const { data: purchase, isLoading } = useQuery({
         queryKey: ['purchase', id],
@@ -22,12 +23,20 @@ export default function ShowPurchase() {
     });
 
     const receiveMutation = useMutation({
-        mutationFn: () => purchasesService.receive(Number(id)),
+        mutationFn: () => purchasesService.receive(Number(id), {
+            items: (purchase?.items ?? [])
+                .filter((item) => (item.received_quantity ?? 0) < item.quantity)
+                .map((item) => ({
+                    purchase_item_id: item.id,
+                    received_quantity: item.quantity - (item.received_quantity ?? 0),
+                })),
+        }),
         onSuccess: () => {
             addToast({ type: 'success', title: 'Purchase received successfully' });
+            queryClient.invalidateQueries({ queryKey: ['purchase', id] });
         },
-        onError: () => {
-            addToast({ type: 'error', title: 'Failed to receive purchase' });
+        onError: (error) => {
+            addToast({ type: 'error', title: (error as Error)?.message || 'Failed to receive purchase' });
         },
     });
 

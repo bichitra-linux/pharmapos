@@ -20,7 +20,7 @@ export const prescriptionsService = {
         return res.data;
     },
 
-    dispense: async (id: number, data?: { items?: { id: number; dispensed_quantity: number }[] }) => {
+    dispense: async (id: number, data?: { items?: { prescription_item_id: number; quantity_dispensed: number }[] }) => {
         const res = await api.post<ApiResponse<Prescription>>(`/prescriptions/${id}/dispense`, data);
         return res.data;
     },

@@ -38,7 +38,7 @@ export const purchasesService = {
         return res.data;
     },
 
-    receive: async (id: number, data?: { items?: { id: number; received_quantity: number }[] }) => {
+    receive: async (id: number, data?: { items?: { purchase_item_id: number; received_quantity: number }[] }) => {
         const res = await api.post<ApiResponse<Purchase>>(`/purchases/${id}/receive`, data);
         return res.data;
     },

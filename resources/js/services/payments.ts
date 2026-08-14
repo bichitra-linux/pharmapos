@@ -8,37 +8,19 @@ interface PaymentInitResponse {
 }
 
 export const paymentsService = {
-    initiateEsewa: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/esewa', {
+    initiate: async (gateway: string, saleId: number, amount: number) => {
+        const res = await api.post<ApiResponse<PaymentInitResponse>>(`/payments/${gateway}/initiate`, {
             sale_id: saleId,
             amount,
         });
         return res.data;
     },
 
-    initiateKhalti: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/khalti', {
-            sale_id: saleId,
-            amount,
-        });
-        return res.data;
-    },
+    initiateEsewa: async (saleId: number, amount: number) => paymentsService.initiate('esewa', saleId, amount),
 
-    initiateFonepay: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/fonepay', {
-            sale_id: saleId,
-            amount,
-        });
-        return res.data;
-    },
+    initiateKhalti: async (saleId: number, amount: number) => paymentsService.initiate('khalti', saleId, amount),
 
-    initiateConnectIPS: async (saleId: number, amount: number) => {
-        const res = await api.post<ApiResponse<PaymentInitResponse>>('/payments/connectips', {
-            sale_id: saleId,
-            amount,
-        });
-        return res.data;
-    },
+    initiateFonepay: async (saleId: number, amount: number) => paymentsService.initiate('fonepay', saleId, amount),
 
-
+    initiateConnectIPS: async (saleId: number, amount: number) => paymentsService.initiate('connectips', saleId, amount),
 };

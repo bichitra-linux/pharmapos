@@ -56,22 +56,16 @@ class ReportTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    '*' => [
-                        'date',
-                        'count',
-                        'subtotal',
-                        'vat',
-                        'discount',
-                        'total',
-                    ],
+                    'headers',
+                    'rows',
+                    'totals',
                 ],
             ]);
 
-        $reportData = collect($response->json('data'));
-        $this->assertNotEmpty($reportData);
-        $todayReport = $reportData->firstWhere('date', now()->format('Y-m-d'));
-        $this->assertNotNull($todayReport);
-        $this->assertEquals(2, $todayReport['count']);
+        $reportData = $response->json('data');
+        $this->assertNotEmpty($reportData['rows']);
+        $this->assertEquals(2, $reportData['totals']['Invoices']);
+        $this->assertEquals(now()->format('Y-m-d'), $reportData['rows'][0][0]);
     }
 
     public function test_sales_report_with_date_range(): void
@@ -84,8 +78,8 @@ class ReportTest extends TestCase
 
         $response->assertOk();
 
-        $reportData = collect($response->json('data'));
-        $this->assertNotEmpty($reportData);
+        $reportData = $response->json('data');
+        $this->assertNotEmpty($reportData['rows']);
     }
 
     public function test_vat_report_returns_correct_totals(): void
@@ -103,24 +97,20 @@ class ReportTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'period',
-                    'sales' => [
-                        'taxable_amount',
-                        'output_vat',
-                    ],
-                    'purchases' => [
-                        'taxable_amount',
-                        'input_vat',
-                    ],
-                    'net_vat_payable',
+                    'headers',
+                    'rows',
+                    'totals',
                 ],
             ]);
 
-        $vatData = $response->json('data');
-        $this->assertGreaterThan(0, (float) $vatData['sales']['output_vat']);
+        $rows = collect($response->json('data.rows'));
+        $salesRow = $rows->firstWhere(0, 'Sales');
+        $this->assertNotNull($salesRow);
+        $this->assertGreaterThan(0, (float) $salesRow[1]);
+        $this->assertGreaterThan(0, (float) $salesRow[2]);
         $this->assertEqualsWithDelta(
-            (float) $vatData['sales']['taxable_amount'] * 0.13,
-            (float) $vatData['sales']['output_vat'],
+            (float) $salesRow[1] * 0.13,
+            (float) $salesRow[2],
             0.10
         );
     }
@@ -155,19 +145,15 @@ class ReportTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'summary' => [
-                        'total_medicines',
-                        'total_units',
-                        'stock_at_cost',
-                        'stock_at_mrp',
-                    ],
-                    'category_wise',
+                    'headers',
+                    'rows',
+                    'totals',
                 ],
             ]);
 
-        $summary = $response->json('data.summary');
-        $this->assertEquals(2, (int) $summary['total_medicines']);
-        $this->assertEquals(300, (float) $summary['total_units']);
+        $totals = $response->json('data.totals');
+        $this->assertEquals(2, (int) $totals['Medicines']);
+        $this->assertEquals(300, (float) $totals['Units']);
     }
 
     public function test_profit_loss_report(): void
@@ -185,19 +171,17 @@ class ReportTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    'period',
-                    'revenue',
-                    'cost_of_goods',
-                    'gross_profit',
-                    'margin',
-                    'vat_collected',
-                    'discounts_given',
+                    'headers',
+                    'rows',
+                    'totals',
                 ],
             ]);
 
-        $plData = $response->json('data');
-        $this->assertGreaterThan(0, (float) $plData['revenue']);
-        $this->assertGreaterThan(0, (float) $plData['gross_profit']);
+        $rows = collect($response->json('data.rows'));
+        $revenueRow = $rows->firstWhere(0, 'Revenue');
+        $profitRow = $rows->firstWhere(0, 'Gross Profit');
+        $this->assertGreaterThan(0, (float) $revenueRow[1]);
+        $this->assertGreaterThan(0, (float) $profitRow[1]);
     }
 
     public function test_vat_report_with_date_range(): void
@@ -213,10 +197,9 @@ class ReportTest extends TestCase
 
         $response->assertOk();
 
-        $vatData = $response->json('data');
-        $this->assertEquals($dateFrom, $vatData['period']['from']);
-        $this->assertEquals($dateTo, $vatData['period']['to']);
-        $this->assertGreaterThan(0, (float) $vatData['sales']['output_vat']);
+        $rows = collect($response->json('data.rows'));
+        $salesRow = $rows->firstWhere(0, 'Sales');
+        $this->assertGreaterThan(0, (float) $salesRow[2]);
     }
 
     public function test_reports_require_authentication(): void
@@ -276,16 +259,14 @@ class ReportTest extends TestCase
             ->getJson('/api/reports/sales');
 
         $responseA->assertOk();
-        $reportDataA = collect($responseA->json('data'));
-        $todayReportA = $reportDataA->firstWhere('date', now()->format('Y-m-d'));
-        $this->assertEquals(2, $todayReportA['count']);
+        $reportDataA = $responseA->json('data');
+        $this->assertEquals(2, $reportDataA['totals']['Invoices']);
 
         $responseB = $this->actingAs($userB)
             ->getJson('/api/reports/sales');
 
         $responseB->assertOk();
-        $reportDataB = collect($responseB->json('data'));
-        $todayReportB = $reportDataB->firstWhere('date', now()->format('Y-m-d'));
-        $this->assertEquals(3, $todayReportB['count']);
+        $reportDataB = $responseB->json('data');
+        $this->assertEquals(3, $reportDataB['totals']['Invoices']);
     }
 }

@@ -1,13 +1,17 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { extractPaginatedData } from '@/lib/utils';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { CustomerReturn, SupplierReturn } from '@/types';
 
 export default function ReturnsIndex() {
+    const navigate = useNavigate();
     const [tab, setTab] = useState<'customer' | 'supplier'>('customer');
     const [page, setPage] = useState(1);
 
@@ -59,7 +63,13 @@ export default function ReturnsIndex() {
 
     return (
         <div className="space-y-4">
-            <h1 className="text-2xl font-bold">Returns</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">Returns</h1>
+                <Button onClick={() => navigate('/returns/create')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Return
+                </Button>
+            </div>
 
             <div className="flex gap-1 rounded-lg bg-surface-muted p-1 w-fit" role="tablist">
                 <button

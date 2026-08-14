@@ -14,7 +14,7 @@ class AuthSecurityTest extends TestCase
 {
     use CreatesTestData, RefreshDatabase;
 
-    public function test_login_returns_generic_error_for_deactivated_account(): void
+    public function test_login_rejects_deactivated_account(): void
     {
         $company = $this->createCompany();
         $outlet = $this->createOutlet($company);
@@ -28,11 +28,11 @@ class AuthSecurityTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(401)
-            ->assertJson(['message' => 'Invalid credentials.']);
+        $response->assertStatus(403)
+            ->assertJson(['success' => false]);
     }
 
-    public function test_login_returns_generic_error_for_expired_subscription(): void
+    public function test_login_rejects_expired_subscription(): void
     {
         $company = $this->createCompany(['subscription_expires_at' => now()->subDay()]);
         $outlet = $this->createOutlet($company);
@@ -43,8 +43,8 @@ class AuthSecurityTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(401)
-            ->assertJson(['message' => 'Invalid credentials.']);
+        $response->assertStatus(403)
+            ->assertJson(['success' => false]);
     }
 
     public function test_login_returns_generic_error_for_wrong_password(): void

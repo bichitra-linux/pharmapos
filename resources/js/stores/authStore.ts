@@ -23,6 +23,10 @@ export const useAuthStore = create<AuthState>()(
             },
             logout: () => {
                 useCartStore.getState().clear();
+                localStorage.removeItem('impersonation_token');
+                localStorage.removeItem('impersonation_tenant');
+                localStorage.removeItem('impersonation_user');
+                localStorage.removeItem('impersonation_original_path');
                 set({ user: null, token: null, isAuthenticated: false });
             },
             updateUser: (userData) =>

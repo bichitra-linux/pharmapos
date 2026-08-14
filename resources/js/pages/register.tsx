@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Store } from 'lucide-react';
+import { BrandLogo } from '@/components/ui/brand-logo';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function RegisterPage() {
         password: '',
         password_confirmation: '',
     });
+    const [showPassword, setShowPassword] = useState(false);
 
     const updateField = (field: keyof typeof form, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -30,14 +32,14 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-[oklch(0.96_0.007_50)] px-4 py-8 dark:bg-[oklch(0.15_0.015_50)]">
-            <Card className="w-full max-w-2xl border-[oklch(0.88_0.008_50)]">
+        <div className="flex min-h-screen items-center justify-center bg-surface-muted px-4 py-8">
+            <Card className="w-full max-w-2xl">
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[oklch(0.93_0.04_50)]">
-                        <Store className="h-6 w-6 text-[oklch(0.42_0.13_50)]" />
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
+                        <BrandLogo variant="mark" size="md" decorative />
                     </div>
                     <CardTitle className="text-2xl">Create account</CardTitle>
-                    <CardDescription>Get started with PharmaPOS</CardDescription>
+                    <CardDescription>Get started with PharmaPOS — 14-day free trial</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
@@ -61,47 +63,66 @@ export default function RegisterPage() {
                             value={form.email}
                             onChange={(e) => updateField('email', e.target.value)}
                             placeholder="you@example.com"
+                            autoComplete="email"
                             required
                         />
-                        <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
                         <Input
                             label="Phone"
                             type="tel"
                             value={form.phone}
                             onChange={(e) => updateField('phone', e.target.value)}
                             placeholder="+977-98XXXXXXXX"
+                            autoComplete="tel"
                             required
                         />
-                        <Input
-                            label="Password"
-                            type="password"
-                            value={form.password}
-                            onChange={(e) => updateField('password', e.target.value)}
-                            placeholder="••••••••"
-                            required
-                        />
+                        <div className="relative">
+                            <Input
+                                label="Password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={form.password}
+                                onChange={(e) => updateField('password', e.target.value)}
+                                placeholder="••••••••"
+                                autoComplete="new-password"
+                                hint="Minimum 8 characters with letters, numbers, and mixed case"
+                                className="pr-10"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((v) => !v)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                className="absolute right-2 top-[34px] min-h-[44px] min-w-[44px] flex items-center justify-center text-text-muted hover:text-text"
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
                         </div>
                         <Input
                             label="Confirm Password"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             value={form.password_confirmation}
                             onChange={(e) => updateField('password_confirmation', e.target.value)}
                             placeholder="••••••••"
+                            autoComplete="new-password"
                             required
                         />
                         {register.isError && (
-                            <p className="text-sm text-danger-600 sm:col-span-2">
+                            <p role="alert" className="text-sm text-danger-600 sm:col-span-2">
                                 {(register.error as Error)?.message || 'Registration failed'}
                             </p>
                         )}
-                        <Button type="submit" className="w-full bg-[oklch(0.42_0.13_50)] hover:bg-[oklch(0.55_0.13_50)] sm:col-span-2" loading={register.isPending}>
+                        <Button type="submit" className="w-full sm:col-span-2" loading={register.isPending}>
                             Create account
                         </Button>
                     </form>
                     <p className="mt-4 text-center text-sm text-text-muted">
                         Already have an account?{' '}
-                        <Link to="/login" className="text-[oklch(0.42_0.13_50)] hover:underline">
+                        <Link to="/login" className="text-primary-600 hover:underline">
                             Sign in
+                        </Link>
+                    </p>
+                    <p className="mt-2 text-center">
+                        <Link to="/" className="text-sm text-text-muted hover:text-text hover:underline">
+                            ← Back to home
                         </Link>
                     </p>
                 </CardContent>

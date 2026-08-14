@@ -49,4 +49,15 @@ class PurchaseItem extends Model
     {
         return $this->belongsTo(Medicine::class);
     }
+
+    // ponytail: UI reads unit_price/total_amount; DB stores purchase_price/total
+    public function getUnitPriceAttribute(): float
+    {
+        return (float) $this->purchase_price;
+    }
+
+    public function getTotalAmountAttribute(): float
+    {
+        return (float) $this->total;
+    }
 }

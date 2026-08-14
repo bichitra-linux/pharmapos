@@ -63,6 +63,7 @@ Route::prefix('super-admin')->group(function () {
 
         Route::get('tenants/{tenant}/usage', [SuperAdminTenantController::class, 'usage']);
         Route::post('tenants/{tenant}/impersonate', [SuperAdminTenantController::class, 'impersonate']);
+        Route::post('impersonation/stop', [SuperAdminTenantController::class, 'stopImpersonation']);
         Route::patch('tenants/{tenant}/suspend', [SuperAdminTenantController::class, 'suspend']);
         Route::patch('tenants/{tenant}/activate', [SuperAdminTenantController::class, 'activate']);
         Route::apiResource('tenants', SuperAdminTenantController::class)->only(['index', 'store', 'show', 'update', 'destroy']);

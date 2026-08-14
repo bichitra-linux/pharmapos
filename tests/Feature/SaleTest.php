@@ -152,7 +152,10 @@ class SaleTest extends TestCase
                 ]
             ));
 
-        $response->assertStatus(500);
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
 
         $this->assertDatabaseHas('medicine_batches', [
             'id' => $testData['batch']->id,
@@ -446,6 +449,9 @@ class SaleTest extends TestCase
             ]);
 
         $response->assertStatus(201);
-        $this->assertDatabaseCount('sale_items', 2);
+
+        $this->assertDatabaseHas('sale_items', ['medicine_id' => $testData['medicine']->id]);
+        $this->assertDatabaseHas('sale_items', ['medicine_id' => $medicine2->id]);
+        $this->assertEquals(5, (int) DB::table('sale_items')->sum('quantity'));
     }
 }

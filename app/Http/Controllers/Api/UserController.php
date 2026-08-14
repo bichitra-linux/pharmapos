@@ -35,12 +35,21 @@ final class UserController extends Controller
             'email' => 'required|email|max:255',
             'password' => 'required|string|min:8',
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|in:owner,admin,pharmacist,cashier,inventory_manager',
+            'role' => 'required|in:owner,admin,pharmacist,cashier,inventory_staff',
             'outlet_id' => 'nullable|exists:outlets,id',
             'permissions' => 'nullable|array',
         ]);
 
-        $companyId = $request->user()->company_id;
+        $actor = $request->user();
+
+        if ($request->role === 'owner' && ! $actor->isOwner()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the company owner can assign the owner role.',
+            ], 403);
+        }
+
+        $companyId = $actor->company_id;
 
         // Validate outlet belongs to company
         if ($request->outlet_id) {
@@ -109,7 +118,7 @@ final class UserController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email', Rule::unique('users')->where(fn ($q) => $q->where('company_id', $user->company_id))->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
-            'role' => 'sometimes|in:owner,admin,pharmacist,cashier,inventory_manager',
+            'role' => 'sometimes|in:owner,admin,pharmacist,cashier,inventory_staff',
             'outlet_id' => ['nullable', 'exists:outlets,id', function ($attribute, $value, $fail) use ($request) {
                 $outletExists = Outlet::where('id', $value)
                     ->where('company_id', $request->user()->company_id)
@@ -121,6 +130,17 @@ final class UserController extends Controller
             'permissions' => 'nullable|array',
             'is_active' => 'sometimes|boolean',
         ]);
+
+        $actor = $request->user();
+
+        $targetIsOwner = $user->role->value === 'owner' || $request->role === 'owner';
+
+        if ($targetIsOwner && ! $actor->isOwner()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the company owner can assign or modify the owner role.',
+            ], 403);
+        }
 
         $user->update($request->only(['name', 'email', 'phone', 'role', 'outlet_id', 'permissions', 'is_active']));
 

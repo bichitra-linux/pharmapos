@@ -1,10 +1,11 @@
 import api from './api';
 import type { ApiResponse, Manufacturer } from '@/types';
+import { extractPaginatedData } from '@/lib/utils';
 
 export const manufacturersService = {
     list: async (params?: Record<string, string | number | boolean>) => {
-        const res = await api.get('/manufacturers', { params });
-        return res.data;
+        const res = await api.get<ApiResponse<Manufacturer[]>>('/manufacturers', { params });
+        return extractPaginatedData<Manufacturer>(res.data);
     },
 
     create: async (data: Partial<Manufacturer>) => {

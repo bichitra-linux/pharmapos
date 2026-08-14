@@ -99,7 +99,7 @@ export default function CreateEditUser() {
                             <Input label="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} />
                             <Select
                                 label="Role"
-                                options={ROLES.map((r) => ({ label: r.charAt(0).toUpperCase() + r.slice(1), value: r }))}
+                                options={ROLES.map((r) => ({ label: r.label, value: r.value }))}
                                 value={form.role}
                                 onChange={(v) => updateField('role', v)}
                             />

@@ -42,7 +42,7 @@ export default function SuppliersIndex() {
                 searchable
                 searchPlaceholder="Search suppliers..."
                 onSearch={setSearch}
-                onRowClick={(item) => navigate(`/suppliers/${(item as unknown as Supplier).id}/edit`)}
+                onRowClick={(item) => navigate(`/suppliers/${(item as unknown as Supplier).id}/ledger`)}
                 pagination={{
                     currentPage: data?.meta?.current_page ?? 1,
                     lastPage: data?.meta?.last_page ?? 1,

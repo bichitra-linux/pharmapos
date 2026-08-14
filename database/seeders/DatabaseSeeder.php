@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ManufacturerSeeder::class,
             SuperAdminSeeder::class,
             LandingPageSeeder::class,
+            PaymentGatewaySeeder::class,
         ];
 
         if (! app()->isProduction()) {

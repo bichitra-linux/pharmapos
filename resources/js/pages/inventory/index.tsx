@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventory';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { MedicineBatch } from '@/types';
 
@@ -77,6 +78,14 @@ export default function InventoryIndex() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Inventory / Stock</h1>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => navigate('/inventory/reorder')}>
+                        Reorder Suggestions
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/inventory/adjustments')}>
+                        Adjustments
+                    </Button>
+                </div>
             </div>
             <DataTable
                 columns={columns}

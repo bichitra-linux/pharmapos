@@ -42,12 +42,12 @@ export default function CreateMedicine() {
     const { data: manufacturers } = useQuery({
         queryKey: ['manufacturers', 'list'],
         queryFn: () => manufacturersService.list({ per_page: 200 }),
-        select: (res) => res.data?.data ?? res.data ?? [],
+        select: (res) => res.data,
         staleTime: 60_000,
     });
 
     const duplicateConfirm = useMutation({
-        mutationFn: (data: typeof form) => medicinesService.create(data),
+        mutationFn: (data: typeof form & { force_create?: boolean }) => medicinesService.create(data),
         onSuccess: (res) => {
             addToast({ type: 'success', title: 'Medicine created successfully' });
             navigate(`/medicines/${res.data.id}`);
@@ -66,7 +66,7 @@ export default function CreateMedicine() {
             if (errData?.warning === 'duplicate') {
                 const s = errData.similar;
                 if (window.confirm(`Similar medicine already exists:\n${s.brand_name}${s.strength ? ' ' + s.strength : ''} (${s.manufacturer ?? '-'})\n\nCreate anyway?`)) {
-                    duplicateConfirm.mutate(form);
+                    duplicateConfirm.mutate({ ...form, force_create: true });
                 }
                 return;
             }
@@ -79,7 +79,7 @@ export default function CreateMedicine() {
         mutation.mutate(form);
     };
 
-    const manufacturerList: { id: number; name: string; country?: string }[] = Array.isArray(manufacturers) ? manufacturers : [];
+    const manufacturerList: { id: number; name: string; country?: string | null }[] = Array.isArray(manufacturers) ? manufacturers : [];
 
     return (
         <div className="space-y-4">

@@ -51,15 +51,24 @@ final class SettingController extends Controller
         $request->validate([
             'invoice_prefix' => 'nullable|string|max:20',
             'invoice_footer' => 'nullable|string|max:500',
+            'receipt_header' => 'nullable|string|max:500',
+            'receipt_footer' => 'nullable|string|max:500',
+            'prescription_prefix' => 'nullable|string|max:20',
+            'purchase_prefix' => 'nullable|string|max:20',
+            'return_prefix' => 'nullable|string|max:20',
             'receipt_printer_width' => 'nullable|integer|in:58,80',
             'default_payment_method' => 'nullable|string|max:50',
             'enable_loyalty' => 'nullable|boolean',
             'loyalty_rate' => 'nullable|numeric|min:0',
+            'loyalty_points_per_rupee' => 'nullable|numeric|min:0',
             'low_stock_alert' => 'nullable|boolean',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'expiry_alert_days' => 'nullable|integer|min:1',
             'vat_rate' => 'nullable|numeric|min:0|max:100',
+            'default_tax_rate' => 'nullable|numeric|min:0|max:100',
             'currency' => 'nullable|string|max:10',
+            'currency_symbol' => 'nullable|string|max:10',
+            'enable_narcotics_register' => 'nullable|boolean',
             'date_format' => 'nullable|string|max:20',
             'time_zone' => 'nullable|string|max:50',
         ]);
@@ -69,10 +78,13 @@ final class SettingController extends Controller
         $settings = json_decode($existingSettings ?? '{}', true);
 
         $allowedKeys = [
-            'invoice_prefix', 'invoice_footer', 'receipt_printer_width',
-            'default_payment_method', 'enable_loyalty', 'loyalty_rate',
-            'low_stock_alert', 'low_stock_threshold', 'expiry_alert_days',
-            'vat_rate', 'currency', 'date_format', 'time_zone',
+            'invoice_prefix', 'invoice_footer', 'receipt_header', 'receipt_footer',
+            'prescription_prefix', 'purchase_prefix', 'return_prefix',
+            'receipt_printer_width', 'default_payment_method', 'enable_loyalty',
+            'loyalty_rate', 'loyalty_points_per_rupee', 'low_stock_alert',
+            'low_stock_threshold', 'expiry_alert_days', 'vat_rate',
+            'default_tax_rate', 'currency', 'currency_symbol',
+            'enable_narcotics_register', 'date_format', 'time_zone',
         ];
 
         foreach ($allowedKeys as $key) {

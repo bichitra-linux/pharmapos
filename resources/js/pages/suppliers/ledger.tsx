@@ -25,7 +25,9 @@ export default function SupplierLedger() {
     });
 
     if (loadingSupplier || loadingLedger) return <PageLoader />;
-    if (!supplier) return <div>Supplier not found</div>;
+    if (!supplier || !ledger) return <div>Supplier not found</div>;
+
+    const payments = ledger.payments ?? [];
 
     return (
         <div className="space-y-6">
@@ -35,6 +37,11 @@ export default function SupplierLedger() {
                     Back
                 </Button>
                 <h1 className="text-2xl font-bold">Ledger: {supplier.name}</h1>
+                <div className="ml-auto">
+                    <Button variant="outline" onClick={() => navigate(`/suppliers/${id}/edit`)}>
+                        Edit Supplier
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -44,7 +51,12 @@ export default function SupplierLedger() {
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
                     <div><span className="text-text-muted">Phone:</span> {supplier.phone}</div>
                     <div><span className="text-text-muted">Email:</span> {supplier.email || '-'}</div>
-                    <div><span className="text-text-muted">Outstanding:</span> <span className="font-bold text-danger-600">See ledger below</span></div>
+                    <div>
+                        <span className="text-text-muted">Outstanding:</span>{' '}
+                        <span className={ledger.summary.balance > 0 ? 'font-bold text-danger-600' : 'font-bold text-success-600'}>
+                            {formatCurrency(ledger.summary.balance)}
+                        </span>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -64,10 +76,10 @@ export default function SupplierLedger() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {ledger && ledger.length > 0 ? ledger.map((p) => (
+                            {payments.length > 0 ? payments.map((p) => (
                                 <TableRow key={p.id}>
                                     <TableCell>{formatDate(p.created_at)}</TableCell>
-                                    <TableCell>{p.purchase?.purchase_number || '-'}</TableCell>
+                                    <TableCell>{p.purchase_number || '-'}</TableCell>
                                     <TableCell>{p.payment_method}</TableCell>
                                     <TableCell>{formatCurrency(p.amount)}</TableCell>
                                     <TableCell>{p.reference_number || '-'}</TableCell>

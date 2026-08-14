@@ -12,19 +12,23 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     try {
-        const stored = localStorage.getItem('auth-storage');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            const token = parsed?.state?.token;
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
+        const impersonationToken = localStorage.getItem('impersonation_token');
+        const token = impersonationToken || getAuthToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
     } catch {
         // ignore parse errors
     }
     return config;
 });
+
+function getAuthToken(): string | null {
+    const stored = localStorage.getItem('auth-storage');
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    return parsed?.state?.token ?? null;
+}
 
 api.interceptors.response.use(
     (response) => response,
@@ -33,8 +37,14 @@ api.interceptors.response.use(
         const data = error.response?.data;
 
         if (status === 401) {
+            // Let the login page render its own error instead of bouncing
+            if (error.config?.url?.includes('/auth/login')) {
+                error.message = data?.message || 'Invalid credentials';
+                return Promise.reject(error);
+            }
+            const wasImpersonating = !!localStorage.getItem('impersonation_token');
             useAuthStore.getState().logout();
-            window.location.href = '/login';
+            window.location.href = wasImpersonating ? '/super-admin/dashboard' : '/login';
         }
 
         if (status === 403 && data?.suspension_reason) {

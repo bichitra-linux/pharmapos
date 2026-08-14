@@ -33,6 +33,7 @@ class Sale extends Model
         'discount_type',
         'vat_percentage',
         'payment_status',
+        'transaction_id',
         'sale_type',
         'dispensed_by',
         'notes',

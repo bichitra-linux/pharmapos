@@ -101,6 +101,9 @@ export default function CustomerShowPage() {
                         {customer.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                 </div>
+                <Button variant="outline" onClick={() => navigate(`/customers/${id}/edit`)}>
+                    Edit
+                </Button>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">

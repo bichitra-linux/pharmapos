@@ -19,7 +19,12 @@ class Company extends Model
         'slug',
         'logo',
         'address',
+        'city',
+        'state',
+        'country',
+        'local_level',
         'phone',
+        'phone_country_code',
         'email',
         'pan_number',
         'vat_number',
@@ -36,6 +41,8 @@ class Company extends Model
         'registration_number',
         'google_maps_link',
         'is_active',
+        'suspended_at',
+        'suspension_reason',
     ];
 
     protected function casts(): array
@@ -118,6 +125,7 @@ class Company extends Model
         $this->update([
             'suspended_at' => null,
             'suspension_reason' => null,
+            'is_active' => true,
         ]);
     }
 }

@@ -47,9 +47,12 @@ export function SuperAdminLayout() {
         const check = async () => {
             try {
                 const res = await superAdminService.getHealth();
-                setSystemDegraded(!res.data?.status || res.data.status !== 'healthy');
-            } catch {
-                setSystemDegraded(true);
+                const status = res?.data?.status;
+                setSystemDegraded(Boolean(status) && status !== 'healthy');
+            } catch (err: any) {
+                // health endpoint returns 503 with the payload when degraded
+                const status = err?.response?.data?.data?.status;
+                setSystemDegraded(Boolean(status) && status !== 'healthy');
             }
         };
         check();
@@ -83,9 +86,9 @@ export function SuperAdminLayout() {
             >
                 <div className="flex h-16 items-center justify-between border-b border-primary-800/30 px-4">
                     {sidebarOpen && (
-                        <div className="flex items-center gap-2">
-                            <Shield className="h-6 w-6 text-primary-400" />
-                            <span className="text-lg font-bold text-white">Super Admin</span>
+                        <div className="flex items-center gap-2 text-white">
+                            <Shield className="h-5 w-5 text-primary-300" aria-hidden="true" />
+                            <span className="text-sm font-semibold uppercase tracking-wide">Super Admin</span>
                         </div>
                     )}
                     <button
@@ -142,7 +145,7 @@ export function SuperAdminLayout() {
 
             {sidebarOpen && (
                 <div
-                    className={`fixed inset-0 z-30 bg-black/40 lg:hidden ${systemDegraded ? 'mt-10' : ''}`}
+                    className={`fixed inset-0 z-30 bg-black/40 lg:hidden ${systemDegraded ? 'top-10' : ''}`}
                     onClick={toggleSidebar}
                     onKeyDown={(e) => e.key === 'Escape' && toggleSidebar()}
                     tabIndex={-1}
@@ -154,8 +157,7 @@ export function SuperAdminLayout() {
                 className={cn(
                     'transition-all duration-300',
                     'ml-0 lg:ml-16',
-                    sidebarOpen && 'lg:ml-64',
-                    systemDegraded && 'mt-10'
+                    sidebarOpen && 'lg:ml-64'
                 )}
             >
                 <header className={`sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6 ${systemDegraded ? 'top-10' : ''}`}>

@@ -23,8 +23,17 @@
     </style>
 </head>
 <body>
+    @php
+        $invoiceLogoPath = public_path('pharmapos-logo.png');
+        $invoiceLogoBase64 = is_file($invoiceLogoPath)
+            ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($invoiceLogoPath))
+            : null;
+    @endphp
     <div class="header">
         <div class="company-info">
+            @if ($invoiceLogoBase64)
+                <img src="{{ $invoiceLogoBase64 }}" alt="{{ $company->name }}" style="max-height: 56px; margin-bottom: 6px;">
+            @endif
             <h1>{{ $company->name }}</h1>
             <p>{{ $company->address }}</p>
             <p>Ph: {{ $company->phone }}</p>

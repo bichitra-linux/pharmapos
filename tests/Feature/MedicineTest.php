@@ -152,9 +152,7 @@ class MedicineTest extends TestCase
                 'message' => 'Medicine deleted successfully.',
             ]);
 
-        $this->assertDatabaseMissing('medicines', [
-            'id' => $medicine->id,
-        ]);
+        $this->assertSoftDeleted('medicines', ['id' => $medicine->id]);
     }
 
     public function test_cannot_see_medicines_from_another_company(): void

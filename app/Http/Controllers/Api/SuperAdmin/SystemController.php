@@ -25,7 +25,12 @@ class SystemController extends Controller
         }
 
         try {
-            Cache::store()->getConnection();
+            Cache::store()->put('health:check', 'ok', 5);
+            $val = Cache::store()->get('health:check');
+            if ($val !== 'ok') {
+                throw new \RuntimeException('Cache round-trip mismatch');
+            }
+            unset($val);
             $checks['cache'] = ['status' => 'ok', 'message' => 'Connected'];
         } catch (\Exception $e) {
             $checks['cache'] = ['status' => 'error', 'message' => $e->getMessage()];

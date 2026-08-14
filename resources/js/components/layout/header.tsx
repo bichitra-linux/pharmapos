@@ -9,7 +9,7 @@ import {
     LogOut,
     Settings,
     ChevronDown,
-    Store,
+    Building2,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '@/stores/uiStore';
@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/auth';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { medicinesService } from '@/services/medicines';
+import { dashboardService } from '@/services/dashboard';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export function Header() {
@@ -48,6 +49,33 @@ export function Header() {
         select: (res) => res.data,
         staleTime: 60_000,
     });
+
+    const { data: notificationData } = useQuery({
+        queryKey: ['notifications'],
+        queryFn: async () => {
+            const [expiryRes, stockRes] = await Promise.all([
+                dashboardService.getExpiryAlerts(90),
+                dashboardService.getLowStock(),
+            ]);
+            const expiry = (expiryRes as any).data ?? [];
+            const stock = (stockRes as any).data ?? [];
+            return [
+                ...expiry.map((a: any) => ({
+                    id: `expiry-${a.id ?? a.batch_id}`,
+                    title: `Expiring: ${a.brand_name ?? 'batch'} (${a.expiry_date ?? ''})`,
+                    type: 'warning' as const,
+                })),
+                ...stock.map((a: any) => ({
+                    id: `stock-${a.id ?? a.medicine_id}`,
+                    title: `Low stock: ${a.brand_name ?? 'medicine'}`,
+                    type: 'danger' as const,
+                })),
+            ];
+        },
+        enabled: showNotifications,
+        staleTime: 30_000,
+    });
+    const notifications = notificationData ?? [];
 
     const switchOutletMutation = useMutation({
         mutationFn: (outletId: number) => authService.switchOutlet(outletId),
@@ -198,7 +226,7 @@ export function Header() {
                         className="hidden md:flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-text-muted hover:bg-surface-muted"
                         aria-label="Switch outlet"
                     >
-                        <Store className="h-3.5 w-3.5" />
+                        <Building2 className="h-3.5 w-3.5" />
                         <span className="max-w-24 truncate">{user?.outlet?.name || 'Outlet'}</span>
                         <ChevronDown className="h-3 w-3" />
                     </button>
@@ -218,7 +246,7 @@ export function Header() {
                                         o.id === user?.outlet_id ? 'font-medium text-primary-600 bg-primary-50' : ''
                                     }`}
                                 >
-                                    <Store className="h-4 w-4 shrink-0" />
+                                    <Building2 className="h-4 w-4 shrink-0" />
                                     <span className="truncate">{o.name}</span>
                                     {o.is_main_outlet && <span className="text-[10px] text-text-muted ml-auto">Main</span>}
                                 </button>
@@ -234,11 +262,21 @@ export function Header() {
                         aria-label="Notifications"
                     >
                         <Bell className="h-5 w-5" aria-hidden="true" />
-                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-danger-500" aria-hidden="true" />
+                        {notifications.length > 0 && (
+                            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-danger-500" aria-hidden="true" />
+                        )}
                     </button>
                     {showNotifications && (
-                        <div role="menu" className="absolute right-0 top-full z-10 mt-1 w-64 rounded-lg border border-border bg-surface py-2 shadow-lg">
-                            <div role="menuitem" className="px-4 py-2 text-sm text-text-muted">No new notifications</div>
+                        <div role="menu" className="absolute right-0 top-full z-10 mt-1 w-72 rounded-lg border border-border bg-surface py-2 shadow-lg">
+                            {notifications.length > 0 ? (
+                                notifications.slice(0, 8).map((n) => (
+                                    <div key={n.id} role="menuitem" className={`px-4 py-2 text-sm ${n.type === 'danger' ? 'text-danger-700' : 'text-warning-700'}`}>
+                                        {n.title}
+                                    </div>
+                                ))
+                            ) : (
+                                <div role="menuitem" className="px-4 py-2 text-sm text-text-muted">No new notifications</div>
+                            )}
                         </div>
                     )}
                 </div>

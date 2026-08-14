@@ -68,7 +68,7 @@ interface LoginResponse {
 interface TenantCreateData {
     name: string;
     email: string;
-    phone: string;
+    phone?: string;
     address?: string;
     pan_number?: string;
     vat_number?: string;
@@ -77,8 +77,9 @@ interface TenantCreateData {
     pharmacist_name?: string;
     pharmacist_registration_number?: string;
     subscription_plan_id?: number;
-    password: string;
-    password_confirmation: string;
+    admin_name: string;
+    admin_email: string;
+    admin_password: string;
 }
 
 interface TenantUpdateData {
@@ -170,7 +171,7 @@ export const superAdminService = {
 
     getPlans: async () => {
         const res = await superAdminApi.get<ApiResponse<SubscriptionPlan[]>>('plans');
-        return res.data;
+        return extractPaginatedData<SubscriptionPlan>(res.data);
     },
 
     getPlan: async (id: number) => {
@@ -268,6 +269,11 @@ export const superAdminService = {
     // Tenant impersonation & usage
     impersonateTenant: async (id: number) => {
         const res = await superAdminApi.post<ApiResponse<{ token: string; user: any; tenant: any; expires_at: string }>>(`tenants/${id}/impersonate`);
+        return res.data;
+    },
+
+    stopImpersonation: async () => {
+        const res = await superAdminApi.post<ApiResponse<null>>('impersonation/stop');
         return res.data;
     },
 

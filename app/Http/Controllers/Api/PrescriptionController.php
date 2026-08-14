@@ -74,6 +74,8 @@ final class PrescriptionController extends Controller
                 'customer_id' => $request->customer_id,
                 'prescription_number' => $prescriptionNumber,
                 'doctor_name' => $request->doctor_name,
+                'hospital_name' => $request->hospital_name,
+                'diagnosis' => $request->diagnosis,
                 'prescription_date' => $request->prescription_date ?? now(),
                 'notes' => $request->notes,
                 'image_path' => $request->hasFile('image') ? $request->file('image')->store('prescriptions', 'public') : null,

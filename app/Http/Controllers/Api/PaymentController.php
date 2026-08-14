@@ -78,17 +78,38 @@ final class PaymentController extends Controller
             ]);
         }
 
-        $result = $paymentGateway->verify($gateway, $request->all());
+        $result = $paymentGateway->verify($gateway, $request->all(), (float) $sale->total_amount);
 
         if ($result['success']) {
-            DB::transaction(function () use ($sale) {
-                $sale->update(['payment_status' => 'paid']);
+            $verifiedAmount = $result['amount'] ?? null;
+
+            if ($verifiedAmount === null || abs((float) $verifiedAmount - (float) $sale->total_amount) > 0.01) {
+                Log::warning('Payment amount mismatch', [
+                    'gateway' => $gateway,
+                    'sale_id' => $sale->id,
+                    'invoice_number' => $sale->invoice_number,
+                    'expected_amount' => $sale->total_amount,
+                    'received_amount' => $verifiedAmount,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment amount mismatch.',
+                ], 400);
+            }
+
+            DB::transaction(function () use ($sale, $result) {
+                $sale->update([
+                    'payment_status' => 'paid',
+                    'transaction_id' => $result['transaction_id'] ?? null,
+                ]);
             });
 
             Log::info('Payment verified successfully', [
                 'gateway' => $gateway,
                 'sale_id' => $sale->id,
                 'invoice_number' => $sale->invoice_number,
+                'transaction_id' => $result['transaction_id'] ?? null,
             ]);
 
             return response()->json([

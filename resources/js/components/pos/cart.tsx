@@ -29,7 +29,7 @@ export function Cart() {
                 const isExpanded = expandedId === key;
                 const effectivePrice = getEffectivePrice(item);
                 const lineTotal = effectivePrice * item.quantity;
-                const discountAmt = (lineTotal * item.discount_percent) / 100;
+                const discountAmt = (lineTotal * (item.discount_percent ?? 0)) / 100;
                 const packSize = item.units_per_pack ?? 1;
                 const canPieceSell = item.allow_piece_selling && packSize > 1;
                 const isPiece = item.sell_mode === 'piece';

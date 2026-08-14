@@ -15,35 +15,37 @@ import {
     Settings,
     UserCog,
     ChevronLeft,
-    Store,
     AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
+import { BrandLogo } from '@/components/ui/brand-logo';
 
 const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/pos', icon: ShoppingCart, label: 'POS' },
-    { to: '/medicines', icon: Pill, label: 'Medicines' },
-    { to: '/inventory', icon: Package, label: 'Inventory' },
-    { to: '/inventory/reorder', icon: AlertTriangle, label: 'Reorder' },
-    { to: '/purchases', icon: Truck, label: 'Purchases' },
-    { to: '/sales', icon: Receipt, label: 'Sales' },
-    { to: '/customers', icon: Users, label: 'Customers' },
-    { to: '/suppliers', icon: Building2, label: 'Suppliers' },
-    { to: '/prescriptions', icon: FileText, label: 'Prescriptions' },
-    { to: '/returns', icon: RotateCcw, label: 'Returns' },
-    { to: '/reports', icon: BarChart3, label: 'Reports' },
-    { to: '/narcotics-register', icon: Shield, label: 'Narcotics Register' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
-    { to: '/users', icon: UserCog, label: 'Users' },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['owner', 'admin', 'pharmacist', 'cashier', 'inventory_staff'] },
+    { to: '/pos', icon: ShoppingCart, label: 'POS', roles: ['owner', 'admin', 'pharmacist', 'cashier'] },
+    { to: '/medicines', icon: Pill, label: 'Medicines', roles: ['owner', 'admin', 'pharmacist', 'cashier', 'inventory_staff'] },
+    { to: '/inventory', icon: Package, label: 'Inventory', roles: ['owner', 'admin', 'pharmacist', 'cashier', 'inventory_staff'] },
+    { to: '/inventory/reorder', icon: AlertTriangle, label: 'Reorder', roles: ['owner', 'admin', 'inventory_staff'] },
+    { to: '/purchases', icon: Truck, label: 'Purchases', roles: ['owner', 'admin', 'inventory_staff'] },
+    { to: '/sales', icon: Receipt, label: 'Sales', roles: ['owner', 'admin', 'pharmacist', 'cashier'] },
+    { to: '/customers', icon: Users, label: 'Customers', roles: ['owner', 'admin', 'pharmacist', 'cashier', 'inventory_staff'] },
+    { to: '/suppliers', icon: Building2, label: 'Suppliers', roles: ['owner', 'admin', 'inventory_staff'] },
+    { to: '/prescriptions', icon: FileText, label: 'Prescriptions', roles: ['owner', 'admin', 'pharmacist'] },
+    { to: '/returns', icon: RotateCcw, label: 'Returns', roles: ['owner', 'admin'] },
+    { to: '/reports', icon: BarChart3, label: 'Reports', roles: ['owner', 'admin'] },
+    { to: '/narcotics-register', icon: Shield, label: 'Narcotics Register', roles: ['owner', 'admin', 'pharmacist'] },
+    { to: '/settings', icon: Settings, label: 'Settings', roles: ['owner', 'admin'] },
+    { to: '/users', icon: UserCog, label: 'Users', roles: ['owner', 'admin'] },
 ];
 
 export function Sidebar() {
     const sidebarOpen = useUIStore((s) => s.sidebarOpen);
     const toggleSidebar = useUIStore((s) => s.toggleSidebar);
     const user = useAuthStore((s) => s.user);
+
+    const visibleItems = navItems.filter((item) => item.roles.includes(user?.role as never));
 
     return (
         <aside
@@ -54,10 +56,7 @@ export function Sidebar() {
         >
             <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
                 {sidebarOpen && (
-                    <div className="flex items-center gap-2">
-                        <Store className="h-6 w-6 text-primary-400" />
-                        <span className="text-lg font-bold text-white">PharmaPOS</span>
-                    </div>
+                    <BrandLogo variant="full" size="sm" />
                 )}
                 <button
                     onClick={toggleSidebar}
@@ -72,7 +71,7 @@ export function Sidebar() {
 
             <nav className="flex-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
                 <ul className="space-y-1">
-                    {navItems.map((item) => (
+                    {visibleItems.map((item) => (
                         <li key={item.to}>
                             <NavLink
                                 to={item.to}

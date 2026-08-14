@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/stores/cartStore';
 import { formatCurrency } from '@/lib/utils';
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { salesService } from '@/services/sales';
+import { paymentMethodsService } from '@/services/payment-methods';
 import { useToast } from '@/components/ui/toast';
 import { PAYMENT_METHODS } from '@/lib/constants';
 import type { Sale } from '@/types';
@@ -21,11 +23,20 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
     const customer_id = useCartStore((s) => s.customer_id);
     const prescription_id = useCartStore((s) => s.prescription_id);
     const getTotal = useCartStore((s) => s.getTotal);
-    const clear = useCartStore((s) => s.clear);
     const { addToast } = useToast();
     const total = getTotal();
     const [payments, setPayments] = useState<{ method_id: number; amount: number }[]>([]);
     const [processing, setProcessing] = useState(false);
+
+    // ponytail: DB methods are canonical; constants are the fallback if the fetch fails
+    const { data: methodsResponse } = useQuery({
+        queryKey: ['payment-methods'],
+        queryFn: () => paymentMethodsService.list(),
+        enabled: open,
+    });
+    const methods = methodsResponse?.data?.length
+        ? methodsResponse.data
+        : PAYMENT_METHODS.map((m) => ({ id: m.id, name: m.name, type: m.type }));
 
     const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = total - paidAmount;
@@ -74,7 +85,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                     const pieceQty = isPiece ? i.quantity : i.quantity * (i.units_per_pack || 1);
                     const effPrice = isPiece ? i.unit_price / i.units_per_pack : i.unit_price;
                     const lineTotal = effPrice * i.quantity;
-                    const discount = (lineTotal * i.discount_percent) / 100;
+                    const discount = (lineTotal * (i.discount_percent ?? 0)) / 100;
                     return {
                         medicine_id: i.medicine_id,
                         batch_id: i.batch_id,
@@ -121,7 +132,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                 <div className="mb-4">
                     <p className="mb-2 text-sm font-medium">Payment Methods</p>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {PAYMENT_METHODS.map((method) => (
+                        {methods.map((method) => (
                             <button
                                 key={method.id}
                                 onClick={() => addPayment(method.id)}
@@ -137,7 +148,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                     <div className="space-y-2">
                         <p className="text-sm font-medium">Split Payments</p>
                         {payments.map((p, idx) => {
-                            const method = PAYMENT_METHODS.find((m) => m.id === p.method_id);
+                            const method = methods.find((m) => m.id === p.method_id);
                             return (
                                 <div key={idx} className="flex items-center gap-2">
                                     <span className="w-24 text-sm">{method?.name}</span>

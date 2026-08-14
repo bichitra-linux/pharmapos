@@ -12,6 +12,7 @@ use App\Models\Outlet;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -38,18 +39,29 @@ final class AuthController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials.',
-            ], 401);
+                'message' => 'Your account has been deactivated.',
+            ], 403);
         }
 
         $company = $user->company;
+
+        if ($company && $company->isSuspended()) {
+            Log::warning('Failed login attempt', ['email' => $request->email, 'reason' => 'company_suspended']);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Account suspended.',
+                'suspension_reason' => $company->suspension_reason,
+            ], 403);
+        }
+
         if ($company && (! $company->is_active || ($company->subscription_expires_at && $company->subscription_expires_at->isPast()))) {
             Log::warning('Failed login attempt', ['email' => $request->email, 'reason' => 'company_inactive_or_expired']);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials.',
-            ], 401);
+                'message' => 'Subscription has expired. Please renew.',
+            ], 403);
         }
 
         $token = $user->createToken('pharmapos')->plainTextToken;
@@ -76,6 +88,7 @@ final class AuthController extends Controller
             'address' => $request->company_address,
             'pan_number' => $request->pan_number,
             'is_active' => true,
+            'subscription_expires_at' => now()->addDays(14),
         ]);
 
         $outlet = Outlet::create([
@@ -85,6 +98,18 @@ final class AuthController extends Controller
             'phone' => $request->company_phone,
             'is_main_outlet' => true,
             'is_active' => true,
+        ]);
+
+        DB::table('payment_methods')->insert([
+            ['company_id' => $company->id, 'name' => 'Cash', 'type' => 'cash', 'gateway' => null, 'sort_order' => 1, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'eSewa', 'type' => 'digital_wallet', 'gateway' => 'esewa', 'sort_order' => 2, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'Khalti', 'type' => 'digital_wallet', 'gateway' => 'khalti', 'sort_order' => 3, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'IME Pay', 'type' => 'digital_wallet', 'gateway' => 'ime_pay', 'sort_order' => 4, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'Fonepay', 'type' => 'digital_wallet', 'gateway' => 'fonepay', 'sort_order' => 5, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'ConnectIPS', 'type' => 'bank_transfer', 'gateway' => 'connectips', 'sort_order' => 6, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'Card', 'type' => 'card', 'gateway' => null, 'sort_order' => 7, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'Bank Transfer', 'type' => 'bank_transfer', 'gateway' => null, 'sort_order' => 8, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['company_id' => $company->id, 'name' => 'Credit', 'type' => 'credit', 'gateway' => null, 'sort_order' => 9, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $user = User::create([
@@ -180,6 +205,11 @@ final class AuthController extends Controller
             'password' => $request->password,
         ]);
 
+        // Revoke all other sessions; keep the current one
+        $user->tokens()
+            ->where('id', '!=', $user->currentAccessToken()->id)
+            ->delete();
+
         return response()->json([
             'success' => true,
             'message' => 'Password changed successfully.',
@@ -207,6 +237,7 @@ final class AuthController extends Controller
         $user = $request->user();
         $outlet = Outlet::where('id', $request->outlet_id)
             ->where('company_id', $user->company_id)
+            ->where('is_active', true)
             ->first();
 
         if (!$outlet) {

@@ -51,7 +51,13 @@ export const PAYMENT_METHODS = [
 
 export const VAT_RATE = 13;
 
-export const ROLES = ['admin', 'manager', 'cashier', 'pharmacist'] as const;
+export const ROLES = [
+    { value: 'owner', label: 'Owner' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'pharmacist', label: 'Pharmacist' },
+    { value: 'cashier', label: 'Cashier' },
+    { value: 'inventory_staff', label: 'Inventory Staff' },
+] as const;
 
 export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
 

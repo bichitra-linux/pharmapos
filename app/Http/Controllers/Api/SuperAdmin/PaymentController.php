@@ -39,7 +39,7 @@ class PaymentController extends Controller
 
     public function revenue(): JsonResponse
     {
-        $totalRevenue = SubscriptionPayment::where('status', 'completed')
+        $totalRevenue = SubscriptionPayment::whereIn('status', ['active', 'expired'])
             ->sum('amount');
 
         $monthlyRevenue = SubscriptionPayment::select(
@@ -47,7 +47,7 @@ class PaymentController extends Controller
             DB::raw('SUM(amount) as total'),
             DB::raw('COUNT(*) as count')
         )
-            ->where('status', 'completed')
+            ->whereIn('status', ['active', 'expired'])
             ->where('created_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
@@ -58,17 +58,17 @@ class PaymentController extends Controller
             DB::raw('SUM(amount) as total'),
             DB::raw('COUNT(*) as count')
         )
-            ->where('status', 'completed')
+            ->whereIn('status', ['active', 'expired'])
             ->groupBy('year')
             ->orderBy('year')
             ->get();
 
-        $currentMonth = SubscriptionPayment::where('status', 'completed')
+        $currentMonth = SubscriptionPayment::whereIn('status', ['active', 'expired'])
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('amount');
 
-        $previousMonth = SubscriptionPayment::where('status', 'completed')
+        $previousMonth = SubscriptionPayment::whereIn('status', ['active', 'expired'])
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->sum('amount');

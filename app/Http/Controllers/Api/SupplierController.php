@@ -111,10 +111,20 @@ final class SupplierController extends Controller
             ->get();
 
         $payments = DB::table('supplier_payments')
-            ->where('supplier_id', $supplier->id)
-            ->where('company_id', $request->user()->company_id)
-            ->select('id', 'amount', 'payment_method', 'reference_number', 'notes', 'created_at')
-            ->orderByDesc('created_at')
+            ->leftJoin('purchases', 'purchases.id', '=', 'supplier_payments.purchase_id')
+            ->where('supplier_payments.supplier_id', $supplier->id)
+            ->where('supplier_payments.company_id', $request->user()->company_id)
+            ->select(
+                'supplier_payments.id',
+                'supplier_payments.amount',
+                'supplier_payments.payment_method',
+                'supplier_payments.reference_number',
+                'supplier_payments.notes',
+                'supplier_payments.purchase_id',
+                'supplier_payments.created_at',
+                'purchases.purchase_number'
+            )
+            ->orderByDesc('supplier_payments.created_at')
             ->get();
 
         $totalPurchases = $purchases->sum('total');

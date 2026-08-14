@@ -24,17 +24,19 @@ export default function ShowPrescription() {
 
     const dispenseMutation = useMutation({
         mutationFn: () => prescriptionsService.dispense(Number(id), {
-            items: prescription?.items?.map((item) => ({
-                id: item.id,
-                dispensed_quantity: (item.quantity_prescribed ?? 0) - item.quantity_dispensed,
-            })) || [],
+            items: (prescription?.items ?? [])
+                .filter((item) => (item.quantity_prescribed ?? 0) > item.quantity_dispensed)
+                .map((item) => ({
+                    prescription_item_id: item.id,
+                    quantity_dispensed: (item.quantity_prescribed ?? 0) - item.quantity_dispensed,
+                })),
         }),
         onSuccess: () => {
             addToast({ type: 'success', title: 'Prescription dispensed' });
             queryClient.invalidateQueries({ queryKey: ['prescription', id] });
         },
-        onError: () => {
-            addToast({ type: 'error', title: 'Failed to dispense' });
+        onError: (error) => {
+            addToast({ type: 'error', title: (error as Error)?.message || 'Failed to dispense' });
         },
     });
 

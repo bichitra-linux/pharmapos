@@ -38,6 +38,7 @@ use App\Policies\MedicinePolicy;
 use App\Policies\OutletPolicy;
 use App\Policies\PrescriptionItemPolicy;
 use App\Policies\PrescriptionPolicy;
+use App\Policies\PurchasePolicy;
 use App\Policies\RegisterPolicy;
 use App\Policies\SalePolicy;
 use App\Policies\SupplierPolicy;
@@ -103,5 +104,6 @@ final class AppServiceProvider extends ServiceProvider
         Gate::policy(MedicineBatch::class, MedicineBatchPolicy::class);
         Gate::policy(Register::class, RegisterPolicy::class);
         Gate::policy(\App\Models\Supplier::class, SupplierPolicy::class);
+        Gate::policy(\App\Models\Purchase::class, PurchasePolicy::class);
     }
 }

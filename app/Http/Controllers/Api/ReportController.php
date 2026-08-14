@@ -14,81 +14,123 @@ use Illuminate\Support\Facades\DB;
 
 final class ReportController extends Controller
 {
+    /**
+     * Shared response shape for all report pages: { headers, rows, totals }.
+     * Dates are accepted as either `from`/`to` (frontend) or legacy
+     * `date_from`/`date_to`.
+     */
+    private function table(string $title, array $headers, array $rows, array $totals = []): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'title' => $title,
+                'headers' => $headers,
+                'rows' => $rows,
+                'totals' => $totals,
+            ],
+        ]);
+    }
+
+    private function dateRange(Request $request): array
+    {
+        $from = $request->get('from', $request->get('date_from', Carbon::today()->startOfMonth()->format('Y-m-d')));
+        $to = $request->get('to', $request->get('date_to', Carbon::today()->format('Y-m-d')));
+
+        return [$from, $to];
+    }
+
     public function sales(Request $request): JsonResponse
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
+        [$from, $to] = $this->dateRange($request);
 
         $query = Sale::where('company_id', $companyId)
-            ->where('outlet_id', $outletId);
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        } else {
-            $query->whereDate('created_at', '>=', Carbon::today()->startOfMonth());
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        } else {
-            $query->whereDate('created_at', '<=', Carbon::today());
-        }
+            ->where('outlet_id', $outletId)
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to);
 
         $groupBy = $request->get('group_by', 'day');
 
-        if ($groupBy === 'day') {
-            $data = $query->selectRaw('DATE(created_at) as date, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat_amount) as vat, SUM(discount_amount) as discount, SUM(total_amount) as total')
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get();
-        } elseif ($groupBy === 'month') {
-            $data = $query->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat_amount) as vat, SUM(discount_amount) as discount, SUM(total_amount) as total')
-                ->groupBy('month')
-                ->orderBy('month')
-                ->get();
-        } else {
-            $data = $query->selectRaw('COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat_amount) as vat, SUM(discount_amount) as discount, SUM(total_amount) as total')
-                ->first();
+        $select = 'DATE(created_at) as period, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat_amount) as vat, SUM(discount_amount) as discount, SUM(total_amount) as total';
+
+        if ($groupBy === 'month') {
+            $select = 'DATE_FORMAT(created_at, "%Y-%m") as period, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat_amount) as vat, SUM(discount_amount) as discount, SUM(total_amount) as total';
+        } elseif ($groupBy === 'week') {
+            $select = 'DATE_SUB(DATE(created_at), INTERVAL WEEKDAY(DATE(created_at)) DAY) as period, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat_amount) as vat, SUM(discount_amount) as discount, SUM(total_amount) as total';
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-        ]);
+        $data = $query->selectRaw($select)
+            ->groupBy('period')
+            ->orderBy('period')
+            ->get();
+
+        $headers = ['Period', 'Invoices', 'Subtotal', 'VAT', 'Discount', 'Total'];
+
+        $rows = $data->map(fn ($row) => [
+            $row->period,
+            (int) $row->count,
+            (float) $row->subtotal,
+            (float) $row->vat,
+            (float) $row->discount,
+            (float) $row->total,
+        ])->all();
+
+        $totals = [
+            'Invoices' => (int) $data->sum('count'),
+            'Subtotal' => round((float) $data->sum('subtotal'), 2),
+            'VAT' => round((float) $data->sum('vat'), 2),
+            'Discount' => round((float) $data->sum('discount'), 2),
+            'Total' => round((float) $data->sum('total'), 2),
+        ];
+
+        return $this->table('Sales Report', $headers, $rows, $totals);
     }
 
     public function purchase(Request $request): JsonResponse
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
+        [$from, $to] = $this->dateRange($request);
 
         $query = DB::table('purchases')
             ->where('company_id', $companyId)
-            ->where('outlet_id', $outletId);
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        } else {
-            $query->whereDate('created_at', '>=', Carbon::today()->startOfMonth());
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
+            ->where('outlet_id', $outletId)
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to);
 
         if ($request->filled('supplier_id')) {
             $query->where('supplier_id', $request->supplier_id);
         }
 
-        $data = $query->selectRaw('DATE(created_at) as date, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat) as vat, SUM(discount) as discount, SUM(total) as total, SUM(paid_amount) as paid')
-            ->groupBy('date')
-            ->orderBy('date')
+        $data = $query->selectRaw('DATE(created_at) as period, COUNT(*) as count, SUM(subtotal) as subtotal, SUM(vat) as vat, SUM(discount) as discount, SUM(total) as total, SUM(paid_amount) as paid')
+            ->groupBy('period')
+            ->orderBy('period')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-        ]);
+        $headers = ['Period', 'Purchases', 'Subtotal', 'VAT', 'Discount', 'Total', 'Paid'];
+
+        $rows = $data->map(fn ($row) => [
+            $row->period,
+            (int) $row->count,
+            (float) $row->subtotal,
+            (float) $row->vat,
+            (float) $row->discount,
+            (float) $row->total,
+            (float) $row->paid,
+        ])->all();
+
+        $totals = [
+            'Purchases' => (int) $data->sum('count'),
+            'Subtotal' => round((float) $data->sum('subtotal'), 2),
+            'VAT' => round((float) $data->sum('vat'), 2),
+            'Discount' => round((float) $data->sum('discount'), 2),
+            'Total' => round((float) $data->sum('total'), 2),
+            'Paid' => round((float) $data->sum('paid'), 2),
+        ];
+
+        return $this->table('Purchase Report', $headers, $rows, $totals);
     }
 
     public function inventory(Request $request): JsonResponse
@@ -120,21 +162,31 @@ final class ReportController extends Controller
             ->where('medicines.company_id', $companyId)
             ->where('medicines.is_active', true)
             ->selectRaw('
-                medicine_categories.name as category,
+                COALESCE(medicine_categories.name, "Uncategorized") as category,
                 COUNT(DISTINCT medicines.id) as medicine_count,
                 COALESCE(SUM(medicine_batches.quantity_in_stock), 0) as total_units,
                 COALESCE(SUM(medicine_batches.quantity_in_stock * medicine_batches.purchase_price_per_unit), 0) as stock_value
             ')
-            ->groupBy('medicine_categories.name')
+            ->groupBy('category')
+            ->orderByDesc('stock_value')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'summary' => $summary,
-                'category_wise' => $categoryWise,
-            ],
-        ]);
+        $headers = ['Category', 'Medicines', 'Units', 'Stock Value (Cost)'];
+
+        $rows = $categoryWise->map(fn ($row) => [
+            $row->category,
+            (int) $row->medicine_count,
+            (float) $row->total_units,
+            round((float) $row->stock_value, 2),
+        ])->all();
+
+        $totals = [
+            'Medicines' => (int) $summary->total_medicines,
+            'Units' => (float) $summary->total_units,
+            'Stock Value (Cost)' => round((float) $summary->stock_at_cost, 2),
+        ];
+
+        return $this->table('Inventory Report', $headers, $rows, $totals);
     }
 
     public function expiry(Request $request): JsonResponse
@@ -151,10 +203,10 @@ final class ReportController extends Controller
             ->whereDate('medicine_batches.expiry_date', '<=', Carbon::today()->addDays($days))
             ->selectRaw('
                 CASE
+                    WHEN DATEDIFF(medicine_batches.expiry_date, CURDATE()) <= 0 THEN "Expired"
                     WHEN DATEDIFF(medicine_batches.expiry_date, CURDATE()) <= 30 THEN "0-30 days"
                     WHEN DATEDIFF(medicine_batches.expiry_date, CURDATE()) <= 60 THEN "31-60 days"
-                    WHEN DATEDIFF(medicine_batches.expiry_date, CURDATE()) <= 90 THEN "61-90 days"
-                    ELSE "90+ days"
+                    ELSE "61+ days"
                 END as expiry_group,
                 COUNT(*) as batch_count,
                 SUM(medicine_batches.quantity_in_stock) as total_units,
@@ -163,23 +215,33 @@ final class ReportController extends Controller
             ->groupBy('expiry_group')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-        ]);
+        $headers = ['Expiry Group', 'Batches', 'Units', 'Stock Value'];
+
+        $rows = $data->map(fn ($row) => [
+            $row->expiry_group,
+            (int) $row->batch_count,
+            (float) $row->total_units,
+            round((float) $row->stock_value, 2),
+        ])->all();
+
+        $totals = [
+            'Batches' => (int) $data->sum('batch_count'),
+            'Units' => (float) $data->sum('total_units'),
+            'Stock Value' => round((float) $data->sum('stock_value'), 2),
+        ];
+
+        return $this->table('Expiry Report', $headers, $rows, $totals);
     }
 
     public function profitLoss(Request $request): JsonResponse
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
-
-        $dateFrom = $request->get('date_from', Carbon::today()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', Carbon::today()->format('Y-m-d'));
+        [$from, $to] = $this->dateRange($request);
 
         $sales = Sale::where('company_id', $companyId)
             ->where('outlet_id', $outletId)
-            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('created_at', [$from, $to.' 23:59:59'])
             ->selectRaw('SUM(subtotal) as revenue, SUM(vat_amount) as vat_collected, SUM(discount_amount) as discounts')
             ->first();
 
@@ -188,44 +250,48 @@ final class ReportController extends Controller
             ->join('medicine_batches', 'medicine_batches.id', '=', 'sale_items.batch_id')
             ->where('sales.company_id', $companyId)
             ->where('sales.outlet_id', $outletId)
-            ->whereBetween('sales.created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('sales.created_at', [$from, $to.' 23:59:59'])
             ->selectRaw('SUM(sale_items.quantity * medicine_batches.purchase_price_per_unit) as cost')
             ->first();
 
-        $grossProfit = ($sales->revenue ?? 0) - ($cogs->cost ?? 0);
+        $revenue = (float) ($sales->revenue ?? 0);
+        $cost = (float) ($cogs->cost ?? 0);
+        $grossProfit = $revenue - $cost;
+        $margin = $revenue > 0 ? round(($grossProfit / $revenue) * 100, 2) : 0;
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'period' => ['from' => $dateFrom, 'to' => $dateTo],
-                'revenue' => (float) ($sales->revenue ?? 0),
-                'cost_of_goods' => (float) ($cogs->cost ?? 0),
-                'gross_profit' => round($grossProfit, 2),
-                'margin' => ($sales->revenue ?? 0) > 0 ? round(($grossProfit / $sales->revenue) * 100, 2) : 0,
-                'vat_collected' => (float) ($sales->vat_collected ?? 0),
-                'discounts_given' => (float) ($sales->discounts ?? 0),
-            ],
-        ]);
+        $rows = [
+            ['Revenue', round($revenue, 2)],
+            ['Cost of Goods', round($cost, 2)],
+            ['Gross Profit', round($grossProfit, 2)],
+            ['Margin %', $margin],
+            ['VAT Collected', round((float) ($sales->vat_collected ?? 0), 2)],
+            ['Discounts Given', round((float) ($sales->discounts ?? 0), 2)],
+        ];
+
+        return $this->table(
+            'Profit & Loss',
+            ['Metric', 'Value'],
+            $rows,
+            ['Gross Profit' => round($grossProfit, 2), 'Margin %' => $margin]
+        );
     }
 
     public function vat(Request $request): JsonResponse
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
-
-        $dateFrom = $request->get('date_from', Carbon::today()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', Carbon::today()->format('Y-m-d'));
+        [$from, $to] = $this->dateRange($request);
 
         $salesVat = Sale::where('company_id', $companyId)
             ->where('outlet_id', $outletId)
-            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('created_at', [$from, $to.' 23:59:59'])
             ->selectRaw('SUM(total_amount - vat_amount) as taxable_sales, SUM(vat_amount) as output_vat')
             ->first();
 
         $purchaseVat = DB::table('purchases')
             ->where('company_id', $companyId)
             ->where('outlet_id', $outletId)
-            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('created_at', [$from, $to.' 23:59:59'])
             ->selectRaw('SUM(subtotal) as taxable_purchases, SUM(vat) as input_vat')
             ->first();
 
@@ -233,47 +299,61 @@ final class ReportController extends Controller
         $inputVat = (float) ($purchaseVat->input_vat ?? 0);
         $netVat = $outputVat - $inputVat;
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'period' => ['from' => $dateFrom, 'to' => $dateTo],
-                'sales' => [
-                    'taxable_amount' => (float) ($salesVat->taxable_sales ?? 0),
-                    'output_vat' => $outputVat,
-                ],
-                'purchases' => [
-                    'taxable_amount' => (float) ($purchaseVat->taxable_purchases ?? 0),
-                    'input_vat' => $inputVat,
-                ],
-                'net_vat_payable' => round($netVat, 2),
-            ],
-        ]);
+        $rows = [
+            ['Sales', round((float) ($salesVat->taxable_sales ?? 0), 2), round($outputVat, 2)],
+            ['Purchases', round((float) ($purchaseVat->taxable_purchases ?? 0), 2), round($inputVat, 2)],
+            ['Net VAT Payable', round($netVat, 2), 0],
+        ];
+
+        return $this->table(
+            'VAT Report',
+            ['Item', 'Taxable Amount', 'VAT'],
+            $rows,
+            ['Net VAT Payable' => round($netVat, 2)]
+        );
     }
 
     public function narcotics(Request $request): JsonResponse
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
-
-        $dateFrom = $request->get('date_from', Carbon::today()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', Carbon::today()->format('Y-m-d'));
+        [$from, $to] = $this->dateRange($request);
 
         $entries = DB::table('narcotics_register')
             ->join('medicines', 'medicines.id', '=', 'narcotics_register.medicine_id')
+            ->leftJoin('users', 'users.id', '=', 'narcotics_register.dispensed_by')
             ->where('narcotics_register.company_id', $companyId)
             ->where('narcotics_register.outlet_id', $outletId)
-            ->whereBetween('narcotics_register.created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('narcotics_register.created_at', [$from, $to.' 23:59:59'])
             ->select(
-                'narcotics_register.*',
+                'narcotics_register.created_at',
+                'narcotics_register.patient_name',
+                'narcotics_register.patient_address',
+                'narcotics_register.doctor_name',
+                'narcotics_register.prescription_number',
+                'narcotics_register.quantity',
+                'narcotics_register.balance',
                 'medicines.brand_name',
-                'medicines.generic_name'
+                'users.name as dispensed_by_name'
             )
             ->orderByDesc('narcotics_register.created_at')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $entries,
+        $headers = ['Date', 'Patient', 'Medicine', 'Doctor', 'Prescription #', 'Quantity', 'Balance', 'Dispensed By'];
+
+        $rows = $entries->map(fn ($row) => [
+            $row->created_at,
+            $row->patient_name,
+            $row->brand_name,
+            $row->doctor_name,
+            $row->prescription_number,
+            (float) $row->quantity,
+            (float) $row->balance,
+            $row->dispensed_by_name,
+        ])->all();
+
+        return $this->table('Narcotics Register', $headers, $rows, [
+            'Quantity' => round((float) $entries->sum('quantity'), 2),
         ]);
     }
 
@@ -315,9 +395,19 @@ final class ReportController extends Controller
             ->limit(100)
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $deadStock,
+        $headers = ['Medicine', 'Generic Name', 'Stock', 'Stock Value', 'Last Sold'];
+
+        $rows = $deadStock->map(fn ($row) => [
+            $row->brand_name,
+            $row->generic_name,
+            (float) $row->current_stock,
+            round((float) $row->stock_value, 2),
+            $row->last_sold,
+        ])->all();
+
+        return $this->table('Dead Stock Report', $headers, $rows, [
+            'Stock' => (float) $deadStock->sum('current_stock'),
+            'Stock Value' => round((float) $deadStock->sum('stock_value'), 2),
         ]);
     }
 
@@ -346,9 +436,19 @@ final class ReportController extends Controller
             ->orderByDesc('outstanding')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $dues,
+        $headers = ['Supplier', 'Contact Person', 'Phone', 'Total Purchases', 'Paid', 'Outstanding'];
+
+        $rows = $dues->map(fn ($row) => [
+            $row->name,
+            $row->contact_person,
+            $row->phone,
+            round((float) $row->total_purchases, 2),
+            round((float) $row->total_paid, 2),
+            round((float) $row->outstanding, 2),
+        ])->all();
+
+        return $this->table('Supplier Due Report', $headers, $rows, [
+            'Outstanding' => round((float) $dues->sum('outstanding'), 2),
         ]);
     }
 
@@ -373,9 +473,18 @@ final class ReportController extends Controller
             ->orderByDesc('total_dues')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $dues,
+        $headers = ['Customer', 'Phone', 'Email', 'Total Dues', 'Loyalty Points'];
+
+        $rows = $dues->map(fn ($row) => [
+            $row->name,
+            $row->phone,
+            $row->email,
+            round((float) $row->total_dues, 2),
+            (int) $row->loyalty_points,
+        ])->all();
+
+        return $this->table('Customer Due Report', $headers, $rows, [
+            'Total Dues' => round((float) $dues->sum('total_dues'), 2),
         ]);
     }
 
@@ -383,15 +492,13 @@ final class ReportController extends Controller
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
-
-        $dateFrom = $request->get('date_from', Carbon::today()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', Carbon::today()->format('Y-m-d'));
+        [$from, $to] = $this->dateRange($request);
 
         $data = SaleItem::join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->join('medicines', 'medicines.id', '=', 'sale_items.medicine_id')
             ->where('sales.company_id', $companyId)
             ->where('sales.outlet_id', $outletId)
-            ->whereBetween('sales.created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('sales.created_at', [$from, $to.' 23:59:59'])
             ->selectRaw('
                 medicines.schedule_type,
                 COUNT(DISTINCT sales.id) as sale_count,
@@ -401,9 +508,17 @@ final class ReportController extends Controller
             ->groupBy('medicines.schedule_type')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
+        $headers = ['Schedule', 'Sales', 'Quantity', 'Amount'];
+
+        $rows = $data->map(fn ($row) => [
+            strtoupper((string) $row->schedule_type),
+            (int) $row->sale_count,
+            (float) $row->total_quantity,
+            round((float) $row->total_amount, 2),
+        ])->all();
+
+        return $this->table('Schedule-wise Sales', $headers, $rows, [
+            'Amount' => round((float) $data->sum('total_amount'), 2),
         ]);
     }
 
@@ -411,29 +526,35 @@ final class ReportController extends Controller
     {
         $companyId = $request->user()->company_id;
         $outletId = $request->user()->outlet_id;
-
-        $dateFrom = $request->get('date_from', Carbon::today()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', Carbon::today()->format('Y-m-d'));
+        [$from, $to] = $this->dateRange($request);
 
         $data = SaleItem::join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->join('medicines', 'medicines.id', '=', 'sale_items.medicine_id')
             ->leftJoin('medicine_categories', 'medicine_categories.id', '=', 'medicines.medicine_category_id')
             ->where('sales.company_id', $companyId)
             ->where('sales.outlet_id', $outletId)
-            ->whereBetween('sales.created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->whereBetween('sales.created_at', [$from, $to.' 23:59:59'])
             ->selectRaw('
                 COALESCE(medicine_categories.name, "Uncategorized") as category,
                 COUNT(DISTINCT sales.id) as sale_count,
                 SUM(sale_items.quantity) as total_quantity,
                 SUM(sale_items.total) as total_amount
             ')
-            ->groupBy('medicine_categories.name')
+            ->groupBy('category')
             ->orderByDesc('total_amount')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
+        $headers = ['Category', 'Sales', 'Quantity', 'Amount'];
+
+        $rows = $data->map(fn ($row) => [
+            $row->category,
+            (int) $row->sale_count,
+            (float) $row->total_quantity,
+            round((float) $row->total_amount, 2),
+        ])->all();
+
+        return $this->table('Category-wise Sales', $headers, $rows, [
+            'Amount' => round((float) $data->sum('total_amount'), 2),
         ]);
     }
 }

@@ -11,14 +11,14 @@ export interface CartItem {
     unit_price: number;
     quantity: number;
     max_quantity: number;
-    discount_percent: number;
-    discount_amount: number;
+    discount_percent?: number;
+    discount_amount?: number;
     tax_rate: number;
-    sell_mode: 'pack' | 'piece';
+    sell_mode?: 'pack' | 'piece';
     units_per_pack: number;
     piece_unit_label: string;
     allow_piece_selling: boolean;
-    line_note: string;
+    line_note?: string;
 }
 
 interface CartState {
@@ -27,7 +27,7 @@ interface CartState {
     prescription_id: number | null;
     discount_amount: number;
     sale_type: 'walk_in' | 'online' | 'delivery';
-    addItem: (item: Omit<CartItem, 'discount_percent' | 'discount_amount' | 'sell_mode' | 'line_note'>) => void;
+    addItem: (item: CartItem) => void;
     removeItem: (medicineId: number, batchId: number) => void;
     updateQuantity: (medicineId: number, batchId: number, quantity: number) => void;
     updateDiscount: (medicineId: number, batchId: number, discountPercent: number) => void;
@@ -63,7 +63,7 @@ export const useCartStore = create<CartState>()(
                     );
                     const packSize = item.units_per_pack ?? 1;
                     if (existing) {
-                        const effectiveMax = existing.sell_mode === 'piece' && existing.units_per_pack > 1
+                        const effectiveMax = (existing.sell_mode ?? 'pack') === 'piece' && existing.units_per_pack > 1
                             ? existing.max_quantity * existing.units_per_pack
                             : existing.max_quantity;
                         const newQty = Math.min(existing.quantity + item.quantity, effectiveMax);
@@ -77,10 +77,10 @@ export const useCartStore = create<CartState>()(
                     }
                     return { items: [...state.items, {
                         ...item,
-                        discount_percent: 0,
-                        discount_amount: 0,
-                        sell_mode: 'pack',
-                        line_note: '',
+                        discount_percent: item.discount_percent ?? 0,
+                        discount_amount: item.discount_amount ?? 0,
+                        sell_mode: item.sell_mode ?? 'pack',
+                        line_note: item.line_note ?? '',
                     }] };
                 }),
 
@@ -95,7 +95,7 @@ export const useCartStore = create<CartState>()(
                 set((state) => ({
                     items: state.items.map((i) => {
                         if (i.medicine_id !== medicineId || i.batch_id !== batchId) return i;
-                        const effectiveMax = i.sell_mode === 'piece' && i.units_per_pack > 1
+                        const effectiveMax = (i.sell_mode ?? 'pack') === 'piece' && i.units_per_pack > 1
                             ? i.max_quantity * i.units_per_pack
                             : i.max_quantity;
                         return { ...i, quantity: Math.min(Math.max(1, quantity), effectiveMax) };
@@ -164,7 +164,7 @@ export const useCartStore = create<CartState>()(
                         ? item.unit_price / item.units_per_pack
                         : item.unit_price;
                     const itemTotal = effectivePrice * item.quantity;
-                    return sum + (itemTotal * item.discount_percent) / 100;
+                    return sum + (itemTotal * (item.discount_percent ?? 0)) / 100;
                 }, 0);
                 return itemDiscounts + discount_amount;
             },
@@ -176,7 +176,7 @@ export const useCartStore = create<CartState>()(
                         ? item.unit_price / item.units_per_pack
                         : item.unit_price;
                     const itemTotal = effectivePrice * item.quantity;
-                    const itemDiscount = (itemTotal * item.discount_percent) / 100;
+                    const itemDiscount = (itemTotal * (item.discount_percent ?? 0)) / 100;
                     const taxable = itemTotal - itemDiscount;
                     return sum + (taxable * (item.tax_rate ?? VAT_RATE)) / 100;
                 }, 0);

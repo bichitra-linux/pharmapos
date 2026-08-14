@@ -5,12 +5,15 @@ import { Header } from './header';
 import { useUIStore } from '@/stores/uiStore';
 import { cn } from '@/lib/utils';
 import { EyeOff, LogOut } from 'lucide-react';
+import { superAdminService } from '@/services/super-admin';
+import { useAuthStore } from '@/stores/authStore';
 
 export function AppLayout() {
     const sidebarOpen = useUIStore((s) => s.sidebarOpen);
     const toggleSidebar = useUIStore((s) => s.toggleSidebar);
     const [impersonating, setImpersonating] = useState(false);
     const [tenantName, setTenantName] = useState('');
+    const [exiting, setExiting] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('impersonation_token');
@@ -24,12 +27,19 @@ export function AppLayout() {
         }
     }, []);
 
-    const exitImpersonation = () => {
+    const exitImpersonation = async () => {
+        if (exiting) return;
+        setExiting(true);
+        try {
+            await superAdminService.stopImpersonation();
+        } catch {
+            // token expires server-side within 1h anyway; local keys are cleared regardless
+        }
+        useAuthStore.getState().logout();
         localStorage.removeItem('impersonation_token');
         localStorage.removeItem('impersonation_tenant');
         localStorage.removeItem('impersonation_user');
         localStorage.removeItem('impersonation_original_path');
-        setImpersonating(false);
         window.location.href = '/super-admin/dashboard';
     };
 

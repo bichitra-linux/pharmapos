@@ -178,7 +178,8 @@ final class PurchaseController extends Controller
             'items.*.received_quantity' => 'required|numeric|min:0.01',
         ]);
 
-        return DB::transaction(function () use ($request, $purchase) {
+        try {
+            return DB::transaction(function () use ($request, $purchase) {
             $outletId = $request->user()->outlet_id;
             $companyId = $request->user()->company_id;
 
@@ -276,6 +277,12 @@ final class PurchaseController extends Controller
                 'message' => $fullyReceived ? 'Purchase fully received.' : 'Partial receipt recorded.',
                 'data' => $purchase,
             ]);
-        });
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

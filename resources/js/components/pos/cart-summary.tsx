@@ -29,7 +29,7 @@ export function CartSummary() {
     const discountTotal = useMemo(() => {
         const d = items.reduce((sum, item) => {
             const p = item.sell_mode === 'piece' && item.units_per_pack > 1 ? item.unit_price / item.units_per_pack : item.unit_price;
-            return sum + (p * item.quantity * item.discount_percent) / 100;
+            return sum + (p * item.quantity * (item.discount_percent ?? 0)) / 100;
         }, 0);
         return d + discount_amount;
     }, [items, discount_amount]);
@@ -38,7 +38,7 @@ export function CartSummary() {
         return items.reduce((sum, item) => {
             const p = item.sell_mode === 'piece' && item.units_per_pack > 1 ? item.unit_price / item.units_per_pack : item.unit_price;
             const t = p * item.quantity;
-            return sum + ((t - (t * item.discount_percent) / 100) * (item.tax_rate ?? 13)) / 100;
+            return sum + ((t - (t * (item.discount_percent ?? 0)) / 100) * (item.tax_rate ?? 13)) / 100;
         }, 0);
     }, [items]);
 

@@ -3,7 +3,7 @@ export interface User {
     name: string;
     email: string;
     phone: string | null;
-    role: 'admin' | 'manager' | 'cashier' | 'pharmacist';
+    role: 'owner' | 'admin' | 'pharmacist' | 'cashier' | 'inventory_staff';
     company_id: number;
     outlet_id: number | null;
     is_active: boolean;
@@ -416,16 +416,11 @@ export interface InventoryAdjustment {
     id: number;
     company_id: number;
     outlet_id: number;
-    user_id: number;
-    adjustment_number: string;
-    type: 'addition' | 'subtraction' | 'damage' | 'expired' | 'correction';
-    reason: string;
-    status: 'draft' | 'approved' | 'completed';
-    notes: string | null;
+    type: string;
+    reason: string | null;
+    adjusted_by_name?: string;
     created_at: string;
     updated_at: string;
-    user?: User;
-    items?: AdjustmentItem[];
 }
 
 export interface AdjustmentItem {

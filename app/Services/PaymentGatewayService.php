@@ -67,17 +67,20 @@ class PaymentGatewayService
 
     /**
      * Unified verify — dispatches to the correct gateway.
+     * $expectedAmount is the sale total; gateways that don't return an amount
+     * in their response fall back to it (or the request amount) so the
+     * controller can always compare.
      */
-    public function verify(string $gateway, array $requestData): array
+    public function verify(string $gateway, array $requestData, ?float $expectedAmount = null): array
     {
         return match ($gateway) {
             'esewa' => $this->verifyEsewa(
                 $requestData['refId'] ?? '',
                 $requestData['pid'] ?? '',
-                (float) ($requestData['amt'] ?? 0),
+                $expectedAmount ?? (float) ($requestData['amt'] ?? 0),
             ),
             'khalti' => $this->verifyKhalti($requestData['pidx'] ?? ''),
-            'fonepay' => $this->verifyFonepay($requestData),
+            'fonepay' => $this->verifyFonepay($requestData, $expectedAmount),
             'connectips' => $this->verifyConnectIps($requestData),
             default => ['success' => false, 'message' => "Unknown gateway: {$gateway}"],
         };
@@ -239,7 +242,7 @@ class PaymentGatewayService
     /**
      * Verify Fonepay payment.
      */
-    public function verifyFonepay(array $responseData): array
+    public function verifyFonepay(array $responseData, ?float $expectedAmount = null): array
     {
         $config = $this->getConfig('fonepay');
 
@@ -261,6 +264,7 @@ class PaymentGatewayService
                 return [
                     'success' => true,
                     'transaction_id' => $responseData['PRN'] ?? '',
+                    'amount' => $expectedAmount ?? (float) ($responseData['AMT'] ?? 0),
                     'gateway' => 'fonepay',
                 ];
             }

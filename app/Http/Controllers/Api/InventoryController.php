@@ -111,16 +111,32 @@ final class InventoryController extends Controller
             'outlet_id' => $request->user()->outlet_id,
             'adjustment_type' => $request->type,
             'reason' => $request->reason,
-            'items' => collect($request->items)->map(fn ($item) => [
-                'batch_id' => $item['batch_id'],
-                'quantity_adjusted' => $request->type === 'count_adjustment'
-                    ? (float) $item['quantity']
-                    : -(float) $item['quantity'],
-                'reason' => $request->reason,
-            ])->all(),
+            'items' => collect($request->items)->map(function ($item) use ($request) {
+                $quantity = (float) $item['quantity'];
+
+                if ($request->type === 'count_adjustment') {
+                    $current = (float) MedicineBatch::where('id', $item['batch_id'])->value('quantity_in_stock');
+                    $delta = $quantity - $current;
+                } else {
+                    $delta = -$quantity;
+                }
+
+                return [
+                    'batch_id' => $item['batch_id'],
+                    'quantity_adjusted' => $delta,
+                    'reason' => $request->reason,
+                ];
+            })->all(),
         ];
 
-        $inventory->createAdjustment($data);
+        try {
+            $inventory->createAdjustment($data);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return $this->created(null, 'Stock adjustment recorded successfully.');
     }

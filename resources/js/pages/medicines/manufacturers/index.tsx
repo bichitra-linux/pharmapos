@@ -21,7 +21,7 @@ export default function ManufacturersIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['manufacturers'],
         queryFn: () => manufacturersService.list({ per_page: 100 }),
-        select: (res) => res.data?.data ?? res.data ?? [],
+        select: (res) => res.data,
     });
 
     const createMutation = useMutation({

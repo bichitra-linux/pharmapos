@@ -1,58 +1,69 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+    <img src="resources/images/pharmapos-logo.png" width="320" alt="PharmaPOS">
 </p>
 
-## About Laravel
+<p align="center"><strong>PharmaPOS</strong> &mdash; Smart Pharmacy, Simplified</p>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">A cloud-based pharmacy Point-of-Sale, inventory and compliance platform built for Nepali pharmacies.</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Overview
 
-## Learning Laravel
+PharmaPOS helps pharmacies run a clean counter: batch-tracked inventory, expiry alerts, prescription and schedule-H / H1 / X handling, narcotics register, VAT + PAN invoicing, eSewa / Khalti / Fonepay payments, and a multi-outlet ledger &mdash; from a single Laravel + React app.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Features
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Inventory & batch tracking** &mdash; every unit traced by batch, expiry, manufacturer and reorder level; FIFO dispensing; auto-deactivation on zero stock.
+- **Pharmacy workflow** &mdash; walk-in &amp; online sales, prescription capture, schedule-aware dispense with pharmacist override, partial dispense and refunds.
+- **Compliance** &mdash; VAT (13%), PAN invoicing, narcotics register, audit logs, Bikram Sambat calendar support.
+- **Payments** &mdash; cash, card, credit, eSewa, Khalti, Fonepay, ConnectIPS &mdash; with split payments per sale.
+- **Reports** &mdash; sales, purchases, inventory, expiry, profit &amp; loss, VAT, narcotics, dead-stock, supplier / customer due.
+- **Multi-outlet** &mdash; per-outlet stock, centralised reporting, role-based access (owner / admin / pharmacist / cashier / inventory_staff).
+- **Super-admin platform** &mdash; tenant management, plans, subscriptions, system health.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Stack
 
-## Agentic Development
+- **Backend** &mdash; Laravel 13, PHP 8.3+, MySQL 8, Redis (predis)
+- **Frontend** &mdash; React 19, Vite, Tailwind CSS v4, Zustand, react-query
+- **Auth** &mdash; Laravel Sanctum (SPA tokens)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Project layout
 
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+pharmapos/
+├── app/                # Laravel app (controllers, models, services, observers, actions)
+├── database/migrations/ # schema
+├── resources/js/       # React SPA (pages, components, hooks, stores, services)
+├── resources/css/      # Tailwind v4 + design tokens (OKLCH)
+├── resources/views/    # Blade (landing, invoice, app shell)
+├── public/build/       # Vite output (gitignored; ships via release artifact)
+├── routes/             # api + web
+└── tests/              # PHPUnit
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Getting started
 
-## Contributing
+```bash
+composer install
+npm ci
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
+php artisan serve   # or use the composer `dev` script
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Deployment
 
-## Code of Conduct
+See **[DEPLOY_CPANEL.md](DEPLOY_CPANEL.md)** for the DevOps handoff (cPanel + Redis shared hosting).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Documentation
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- **[RELEASE_AUDIT_2026-08.md](RELEASE_AUDIT_2026-08.md)** &mdash; audit findings and fixes per release item.
+- **[PLAN.md](PLAN.md)** &mdash; the original product conversion plan.
+- **[DESIGN.md](DESIGN.md)** &mdash; design system (colors, typography, components).
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT (see upstream Laravel license references where applicable).
